@@ -1,0 +1,1996 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Client Wealth Projection</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: a pale blue band carries the client and the headline number; everything below is a quiet working ledger on white. */
+:root{
+  --bg:#FFFFFF; --surface:#FFFFFF; --ink:#141414; --muted:#5C5C5C; --line:#E8E6E1; --field:#FAF9F6;
+  --tint:#FFF8E5; --tint-2:#FFE6A6; --navy:#141414; --navy-2:#2B2B2B; --on-navy:#FFFFFF;
+  --chrome:#FFA700; --chrome-2:#F09A00; --on-chrome:#141414; --green:#1E8A4C; --green-tint:#E8F5EE; --inv:#6B7178;
+  --gold:#8A5A00; --gold-bright:#FFA700;
+  --good:#147A45; --bad:#B3261E;
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4; --s6:#008300; --s7:#6250d6; --s8:#e34948;
+  --r1:#cfe0f7; --r2:#a6c5f0; --r3:#79a6e6; --r4:#4f86d6; --r5:#2d63b8; --r6:#173f85;
+  --display:"Source Serif 4", Georgia, "Times New Roman", serif;
+  --body:"IBM Plex Sans", "Segoe UI", Helvetica, Arial, sans-serif;
+  --shadow:0 1px 2px rgba(0,0,0,.04), 0 4px 14px rgba(0,0,0,.035);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#121212; --surface:#1A1A1A; --ink:#EDEDED; --muted:#A8A8A8; --line:#2E2E2E; --field:#222222;
+    --tint:#2A2412; --tint-2:#4A3C14; --navy:#F2F2F2; --navy-2:#DADADA; --on-navy:#141414; --chrome:#FFB21F; --chrome-2:#FFC14D; --green:#4CC38A; --green-tint:#14301F; --inv:#7E858D; --green:#4CC38A; --green-tint:#14301F; --inv:#7E858D; --gold:#FFC14D; --gold-bright:#FFB21F; --good:#4CC38A; --bad:#F2857D;
+    --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#0ca30c; --s7:#9085e9; --s8:#e66767;
+    --shadow:0 1px 2px rgba(0,0,0,.3);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#121212; --surface:#1A1A1A; --ink:#EDEDED; --muted:#A8A8A8; --line:#2E2E2E; --field:#222222;
+  --tint:#2A2412; --tint-2:#4A3C14; --navy:#F2F2F2; --navy-2:#DADADA; --on-navy:#141414; --chrome:#FFB21F; --chrome-2:#FFC14D; --gold:#FFC14D; --gold-bright:#FFB21F; --good:#4CC38A; --bad:#F2857D;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#0ca30c; --s7:#9085e9; --s8:#e66767;
+  --shadow:0 1px 2px rgba(0,0,0,.3);
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15.5px;line-height:1.45;-webkit-font-smoothing:antialiased}
+button,input,select{font:inherit;color:inherit}
+h1,h2,h3{margin:0;text-wrap:balance}
+.num{font-variant-numeric:tabular-nums}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px}
+:focus-visible{outline:2px solid var(--gold-bright);outline-offset:2px;border-radius:4px}
+[hidden]{display:none!important}
+
+/* buttons */
+.btn{border:1px solid var(--line);background:var(--surface);padding:9px 14px;border-radius:8px;cursor:pointer;font-weight:600;font-size:15px;display:inline-flex;align-items:center;gap:8px;white-space:nowrap}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{background:var(--chrome);border-color:var(--chrome);color:var(--on-chrome)}
+.btn.primary:hover{background:var(--chrome-2);border-color:var(--chrome-2)}
+.btn.gold{background:var(--chrome);border-color:var(--chrome);color:var(--on-chrome)}.btn.gold:hover{background:var(--chrome-2)}
+.btn.ghost{background:transparent;border-color:transparent;color:var(--muted)}
+.btn.ghost:hover{color:var(--ink);border-color:var(--line)}
+.btn svg{width:16px;height:16px;flex:none}
+
+/* intake */
+#intake{min-height:100%;padding:56px 20px 64px;background:var(--bg);color:var(--ink)}
+html:has(#intake:not([hidden])),html:has(#intake:not([hidden])) body{height:100%;background:var(--bg)}
+.intake-grid{max-width:1000px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center}
+.intake-grid h1{font-family:var(--display);font-weight:600;font-size:clamp(32px,4.4vw,48px);line-height:1.12;letter-spacing:-.005em;color:var(--navy)}
+.intake-grid h1 em{font-style:normal;color:var(--gold)}
+.intake-grid p.lede{color:var(--muted);font-size:18px;max-width:38ch;margin:18px 0 0}
+.steps{list-style:none;margin:28px 0 0;padding:0;display:grid;gap:10px;color:var(--muted);font-size:15px}
+.steps b{color:var(--navy);font-weight:600}
+.card-form{background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:14px;padding:28px;display:grid;gap:18px;box-shadow:0 12px 40px rgba(0,0,0,.07);border-top:4px solid var(--chrome)}
+.card-form h2{font-family:var(--display);font-size:22px;font-weight:600;color:var(--navy)}
+.f{display:grid;gap:6px}
+.f label{font-size:13px;font-weight:600;color:var(--muted);letter-spacing:.02em}
+.f input[type=text],.f input[type=number]{border:1px solid var(--line);background:var(--field);border-radius:8px;padding:11px 12px;width:100%;font-size:17px}
+.f .err{color:var(--bad);font-size:13px;min-height:0}
+.two{display:grid;grid-template-columns:1fr 1.4fr;gap:14px;align-items:start}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:var(--field);border-radius:999px;padding:7px 14px;cursor:pointer;font-weight:600;font-size:15px}
+.chip[aria-pressed=true]{background:var(--chrome);color:var(--on-chrome);border-color:var(--chrome)}
+.form-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:4px}
+.form-actions .btn{padding:12px 18px}
+@media (max-width:820px){.intake-grid{grid-template-columns:1fr;gap:28px}#intake{padding-top:28px}}
+
+/* top bar */
+.top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 0}
+.top .brand{font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:12px;color:var(--muted);margin-right:auto}
+.top .by{display:flex;align-items:center;gap:6px;font-size:14px;color:var(--muted)}
+.top .by input{border:0;border-bottom:1px dashed var(--line);background:transparent;padding:4px 2px;width:150px}
+
+/* hero */
+.hero{background:var(--surface);border:1px solid var(--line);border-top:5px solid var(--chrome);color:var(--ink);border-radius:16px;padding:30px 32px;display:grid;grid-template-columns:1fr auto;gap:28px 40px;align-items:end;position:relative;overflow:hidden}
+.hero::after{content:"";position:absolute;right:-80px;top:-120px;width:360px;height:360px;border-radius:50%;border:1px solid rgba(255,167,0,.22);box-shadow:0 0 0 60px rgba(255,167,0,.05),0 0 0 130px rgba(255,167,0,.03);pointer-events:none}
+.hero .who{display:grid;gap:14px;position:relative;z-index:1}
+.hero input{background:transparent;border:0;border-bottom:1px dashed var(--line);color:var(--ink);padding:2px 2px 3px;border-radius:0}
+.hero input:hover{border-bottom-color:var(--gold-bright)}
+#c-name{font-family:var(--display);font-weight:600;color:var(--navy)!important;font-size:clamp(26px,3.4vw,38px);width:100%;max-width:520px;line-height:1.1}
+.meta{display:flex;gap:10px 26px;flex-wrap:wrap;align-items:center;color:var(--muted);font-size:15px}
+.meta label{display:flex;align-items:center;gap:8px}
+.meta input[type=number]{width:54px;font-size:18px;font-weight:600;text-align:center}
+.meta input[type=range]{accent-color:var(--chrome);width:150px;border:0}
+.hero .headline{text-align:right;position:relative;z-index:1}
+.hero .headline .lab{font-size:12.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.hero .who,.hero .headline{min-width:0}.meta input[type=range]{max-width:100%}.hero .big{font-family:var(--display);font-weight:600;font-size:clamp(44px,7vw,80px);line-height:1;color:var(--navy);margin:6px 0 8px;display:inline-block;background:linear-gradient(transparent 68%,var(--tint-2) 68%,var(--tint-2) 92%,transparent 92%);padding:0 4px;white-space:nowrap}
+.hero .sentence{color:var(--muted);font-size:16px;max-width:44ch;margin-left:auto}
+.hero .sentence b{color:var(--gold);font-weight:600}
+@media (max-width:860px){.hero{grid-template-columns:1fr;padding:24px 20px}.hero .headline{text-align:left}.hero .sentence{margin-left:0}}
+
+/* tiles */
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-top:14px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px;min-width:0}
+.tile .lab{font-size:13px;color:var(--muted);font-weight:500}
+.tile .val{font-family:var(--body);font-weight:600;font-size:23px;color:var(--navy);line-height:1.15;margin-top:4px;overflow-wrap:anywhere}
+.tile .sub{font-size:13px;color:var(--muted);margin-top:2px}
+@media (max-width:600px){.tiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+section{margin-top:28px}
+.sec-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.sec-head h2{font-family:var(--display);font-weight:600;font-size:23px;color:var(--navy)}
+.sec-head p{margin:0;color:var(--muted);font-size:15px}
+.panel{min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px 20px;box-shadow:var(--shadow)}
+
+/* chart */
+.tabs{display:inline-flex;gap:4px;margin-right:auto;background:var(--field);border:1px solid var(--line);border-radius:10px;padding:3px}
+.tabs a{padding:7px 14px;border-radius:7px;font-weight:600;font-size:14px;color:var(--muted);text-decoration:none}
+.tabs a:hover{color:var(--ink)}
+.tabs a[aria-current=page]{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.1);border-bottom:2px solid var(--chrome)}
+.alt-link{margin:0;font-size:14.5px;color:var(--muted)}
+.alt-link a{color:var(--ink);font-weight:600}
+.ginputs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px 18px;margin-top:8px}
+.gf{display:grid;gap:4px;align-content:start}
+.gf.wide{grid-column:1/-1}
+.gf label,.gf .flab{font-size:12.5px;font-weight:600;color:var(--muted)}
+.gf input[type=text],.gf input[type=number]{border:1px solid var(--line)!important;background:var(--field)!important;border-radius:8px!important;padding:8px 10px!important;font-size:17px;font-weight:600;width:100%}
+.gf small{font-size:12.5px;color:var(--muted);min-height:15px}
+.gf .rng{display:flex;gap:10px;align-items:center}
+.gf .rng input[type=range]{flex:1;accent-color:var(--chrome);border:0!important;padding:0!important;background:transparent!important}
+.gf .rng input[type=number]{width:70px}
+.g-hero{align-items:start}
+.g-hero .headline{padding-top:6px}
+.g-bottom{display:grid;grid-template-columns:minmax(0,240px) minmax(0,1fr);gap:24px;align-items:center;margin-top:16px}
+@media (max-width:700px){.g-bottom{grid-template-columns:minmax(0,1fr)}}
+.g-leg{display:grid;gap:8px;font-size:15px}
+.g-leg div{display:flex;align-items:center;gap:10px}.g-leg b{margin-left:auto;font-variant-numeric:tabular-nums}.g-leg span.m{color:var(--muted);min-width:90px;text-align:right;font-variant-numeric:tabular-nums}
+.sy th,.sy td{padding-left:8px;padding-right:8px}
+.subn{font-size:11.5px;color:var(--muted);font-weight:400}
+.sy tr.mo td{background:var(--field);font-size:13.5px;color:var(--muted)}
+.sy tr.yr td{font-variant-numeric:tabular-nums}
+.sy .yt{border:0;background:transparent;font-weight:700;cursor:pointer;padding:2px 4px;border-radius:5px;color:var(--ink)}
+.sy .yt:hover{background:var(--tint)}
+.gt select{border:1px solid transparent;border-bottom:1px dashed var(--line);background:transparent;padding:6px 4px;border-radius:6px;max-width:220px;color:var(--ink)}
+.tx{color:var(--bad);font-weight:600}
+.tile.tax .val{color:var(--bad)}
+.taxrow td{background:var(--tint);text-align:left!important;font-size:14.5px;padding:10px}
+.taxsw{display:inline-flex;align-items:center;gap:8px;font-weight:600;font-size:14px;cursor:pointer;padding:7px 12px;border:1px solid var(--line);border-radius:999px;background:var(--surface);white-space:nowrap}
+.taxsw input{width:17px;height:17px;accent-color:var(--chrome);margin:0}
+.taxsw:has(input:checked){background:var(--tint);border-color:var(--chrome)}
+.intake-tax{white-space:normal;border-radius:10px;align-items:flex-start;font-weight:600}
+.intake-tax span{font-weight:400;color:var(--muted);font-size:13px}
+body.notax .taxonly{display:none!important}
+.pill-warn{display:inline-flex;align-items:center;gap:4px;background:var(--tint);color:var(--gold);font-weight:600;font-size:13px;padding:3px 9px;border-radius:999px;margin-top:4px}
+.warn{color:var(--gold);font-weight:700}
+.g-status{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.gt input[type=number],.gt input[type=text]{border:1px solid transparent;border-bottom:1px dashed var(--line);background:transparent;padding:6px;border-radius:6px;font-weight:600;color:var(--ink)}
+.gt input:hover{background:var(--field)}.gt input:focus{background:var(--tint);border-color:var(--chrome);outline:0}
+.gt input[type=number]{width:62px;text-align:right}
+.gt .gname{width:170px}
+#s-table .gname{width:150px}
+#s-table .cat-sel{max-width:170px}
+#s-table select{max-width:130px}
+#s-table th:nth-child(-n+3){text-align:left}
+#s-table td,#s-table th{padding-left:6px;padding-right:6px}
+.gt .ret-in{color:var(--gold)!important}
+.gt .pct{display:inline-flex;align-items:center;gap:2px}.gt .pct::after{content:"%";color:var(--muted);font-size:13px}
+.gt select{border:1px solid transparent;border-bottom:1px dashed var(--line);background:transparent;padding:6px 4px;border-radius:6px;color:var(--ink)}
+.gt input[type=checkbox]{width:18px;height:18px;accent-color:var(--chrome)}
+.gt td{vertical-align:middle}
+@media (max-width:860px){.ginputs{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
+.chart-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px 20px;flex-wrap:wrap;margin-bottom:8px}
+.chart-top .legend{margin:0;font-size:15px;gap:6px 22px}
+.toggle{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:3px;background:var(--field)}
+.toggle button{border:0;background:transparent;padding:6px 14px;border-radius:999px;cursor:pointer;font-weight:600;font-size:13.5px;color:var(--muted)}
+.toggle button[aria-pressed=true]{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:14px;color:var(--muted);margin-bottom:8px}
+.legend span{display:inline-flex;align-items:center;gap:7px}
+.sw{width:11px;height:11px;border-radius:3px;display:inline-block;flex:none}
+.sw.dash{height:0;width:18px;border-top:2px dashed var(--ink);border-radius:0}
+.sw.dot{height:0;width:18px;border-top:2px dotted var(--muted);border-radius:0}
+.chart-wrap{position:relative}
+.chart-wrap svg{display:block;width:100%;height:auto;touch-action:pan-y}
+.chart-wrap text{font-family:var(--body);font-size:12.5px;fill:var(--muted);font-variant-numeric:tabular-nums}
+.tip{position:absolute;top:8px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:13.5px;box-shadow:0 8px 24px rgba(27,42,65,.12);pointer-events:none;min-width:200px;z-index:2}
+.tip h4{margin:0 0 6px;font-size:14px}
+.tip .r{display:flex;justify-content:space-between;gap:16px;align-items:center}
+.tip .r span:first-child{display:inline-flex;gap:7px;align-items:center;color:var(--muted)}
+.tip .r.t{border-top:1px solid var(--line);margin-top:6px;padding-top:6px;font-weight:700}
+.empty{padding:48px 16px;text-align:center;color:var(--muted)}
+.assume{display:flex;flex-wrap:wrap;gap:10px 32px;margin-top:14px;padding-top:14px;border-top:1px solid var(--line);font-size:15px;color:var(--muted)}
+.assume label{display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap}
+.assume b{color:var(--ink)}
+.inl{width:68px;border:1px solid var(--line);background:var(--field);border-radius:6px;padding:4px 6px;text-align:right;font-weight:600;color:var(--ink)}
+
+/* allocation */
+.alloc-grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:16px}
+@media (max-width:900px){.alloc-grid{grid-template-columns:minmax(0,1fr)}}
+.bar-lab{font-size:13px;color:var(--muted);margin:10px 0 5px;display:flex;justify-content:space-between}
+.bar{display:flex;gap:2px;height:22px;border-radius:5px;overflow:hidden;background:var(--field)}
+.bar i{display:block;min-width:2px}
+table{border-collapse:collapse;width:100%;font-size:14.5px}
+th{font-weight:600;color:var(--muted);font-size:12.5px;text-align:right;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+th:first-child,td:first-child{text-align:left}
+tr:last-child td{border-bottom:0}
+tr.tot td{font-weight:700;border-top:2px solid var(--line)}
+.scroll{overflow-x:auto}
+.name-cell{display:inline-flex;align-items:center;gap:8px}
+
+/* segments */
+.seg{background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);margin-bottom:12px;overflow:hidden}
+.seg-head{display:flex;align-items:center;gap:12px;padding:14px 18px;border-left:5px solid var(--c);flex-wrap:wrap}
+.seg-head h3{font-size:17px;font-weight:600;color:var(--navy)}
+.seg-head .desc{color:var(--muted);font-size:14px}
+.seg-head .subtotal{margin-left:auto;text-align:right;font-size:14px;color:var(--muted)}
+.seg-head .subtotal b{font-size:18px;color:var(--ink);font-weight:600}
+.rows{padding:0 18px 4px}
+.row,.row-h{display:grid;grid-template-columns:minmax(160px,1.8fr) minmax(180px,1.3fr) 136px minmax(120px,1fr) 92px 84px minmax(128px,1fr) 34px;gap:10px;align-items:center}
+.row-h{font-size:12px;color:var(--muted);font-weight:600;padding:6px 0;border-top:1px solid var(--line)}
+.row-h span:nth-child(n+4){text-align:right}
+.row{padding:8px 0;border-top:1px solid var(--line)}
+.row .lab{display:none;font-size:11.5px;color:var(--muted);font-weight:600;margin-bottom:3px}
+.row input,.row select{width:100%;border:1px solid transparent;border-bottom:1px dashed var(--line);background:transparent;padding:7px 6px;border-radius:6px;min-width:0}
+.row input:hover,.row select:hover{background:var(--field)}
+.row input:focus,.row select:focus{background:var(--tint);border-color:var(--gold-bright);outline:0}
+.row input.r{text-align:right;font-weight:600;font-variant-numeric:tabular-nums}
+.row .ret{position:relative}
+.row .ret input{padding-right:20px;color:var(--gold);font-weight:700}
+.cat-sel{font-size:14.5px}
+.row .ret.yrs::after{content:"yrs"}
+.row .ret.yrs input{padding-right:30px}
+.row .ret::after{content:"%";position:absolute;right:6px;bottom:8px;color:var(--muted);font-size:13px}
+.row .hint{font-size:12px;color:var(--muted);text-align:right;min-height:14px;line-height:1.25}
+.row .out{text-align:right}
+.row .out b{font-size:16.5px;font-weight:600;display:block;line-height:1.2}
+.row .out small{color:var(--muted);font-size:12.5px}
+.risk-wrap{display:flex;align-items:center;gap:6px}
+.risk-dot{width:9px;height:9px;border-radius:50%;flex:none}
+.del{border:0;background:transparent;cursor:pointer;color:var(--muted);width:30px;height:30px;border-radius:6px;font-size:18px;line-height:1}
+.del:hover{background:var(--field);color:var(--bad)}
+.add-row{display:flex;gap:10px;flex-wrap:wrap;margin:10px 18px 14px}
+.add-row .add{margin:0}
+.add.copy{border-style:solid;border-color:var(--tint-2);background:var(--tint);color:var(--ink)}
+.add.copy:hover{border-color:var(--chrome)}
+.tosip{margin-top:3px;min-height:20px}
+.mini{border:0;background:transparent;padding:2px 6px;font-size:12.5px;font-weight:600;color:var(--gold);cursor:pointer;border-radius:5px}
+.mini:hover{background:var(--tint)}
+.in-sip{font-size:12.5px;font-weight:600;color:var(--green);padding:2px 6px}
+.add{margin:10px 18px 14px;border:1px dashed var(--line);background:transparent;border-radius:8px;padding:8px 14px;cursor:pointer;font-weight:600;color:var(--muted)}
+.add:hover{color:var(--ink);border-color:var(--muted)}
+.seg-note{padding:10px 0 4px;color:var(--muted);font-size:13.5px;border-top:1px solid var(--line)}
+.row .out em{font-style:normal;color:var(--gold);font-weight:600}
+.up{color:var(--green)!important}
+.pill-up{display:inline-flex;align-items:center;gap:4px;background:var(--green-tint);color:var(--green);font-weight:600;font-size:13px;padding:3px 9px;border-radius:999px;margin-top:6px}
+.tile.gain{border-color:color-mix(in srgb,var(--green) 35%,var(--line));background:var(--green-tint)}
+.tile.gain .val,.tile.gain .sub{color:var(--green)}
+td.g{color:var(--green);font-weight:600}
+.sum-grid{display:grid;grid-template-columns:minmax(0,300px) minmax(0,1fr);gap:24px;align-items:center}
+@media (max-width:860px){.sum-grid{grid-template-columns:minmax(0,1fr)}}
+.pie svg{width:100%;max-width:300px;height:auto;display:block;margin:0 auto}
+.pie path{cursor:default}
+.sum-note{color:var(--muted);font-size:13px;margin:10px 0 0}
+.none{padding:10px 0;color:var(--muted);font-size:14.5px;border-top:1px solid var(--line)}
+@media (max-width:980px){
+  .row-h{display:none}
+  .row{grid-template-columns:repeat(4,minmax(0,1fr));padding:12px 0}
+  .row .lab{display:block}
+  .row>div:first-child{grid-column:1/-1}
+  .row .out{grid-column:span 3;text-align:left}
+}
+@media (max-width:560px){.row{grid-template-columns:repeat(2,minmax(0,1fr))}.row .out{grid-column:span 1}}
+
+/* closing */
+.finish{background:var(--tint);border:1px solid var(--tint-2);border-left:5px solid var(--chrome);color:var(--ink);border-radius:16px;padding:24px 28px;display:flex;align-items:center;gap:16px 24px;flex-wrap:wrap}
+.finish h2{font-family:var(--display);font-size:23px;font-weight:600;color:var(--navy)}
+.finish p{margin:4px 0 0;color:var(--muted);font-size:15px}
+.finish .acts{margin-left:auto;display:flex;gap:10px;flex-wrap:wrap}
+.finish .btn{padding:12px 18px}
+.finish .btn.line{background:var(--surface);color:var(--ink);border-color:var(--ink)}
+.disc{color:var(--muted);font-size:13px;max-width:100ch;margin:18px 0 48px}
+#toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:14.5px;z-index:10;max-width:90vw}
+@media (prefers-reduced-motion:no-preference){.bar i{transition:flex-basis .25s ease}}
+</style>
+</head>
+<body>
+
+<!-- ============ INTAKE ============ -->
+<main id="intake">
+  <div class="intake-grid">
+    <div>
+      <h1>Show a client where their money could be in <em id="in-yrs-word">10 years</em>.</h1>
+      <p class="lede">Enter the client's details, add their investments, and walk them through a live projection you can edit together.</p>
+      <ul class="steps">
+        <li><b>1.</b> Client name, age and time frame</li>
+        <li><b>2.</b> Mutual funds, SIPs, SIF, PMS, AIF, private equity, bonds and GIFT City funds, each with its own expected return</li>
+        <li><b>3.</b> Change any number in front of the client, then save the PDF or Excel</li>
+      </ul>
+    </div>
+    <form class="card-form" id="intake-form" novalidate>
+      <h2>Start a new projection</h2>
+      <div class="f">
+        <label for="in-name">Client name</label>
+        <input type="text" id="in-name" autocomplete="off" placeholder="e.g. Mr. Rajesh Mehta">
+        <div class="err" id="in-name-err"></div>
+      </div>
+      <div class="two">
+        <div class="f">
+          <label for="in-age">Age</label>
+          <input type="number" id="in-age" min="1" max="100" inputmode="numeric" placeholder="45">
+          <div class="err" id="in-age-err"></div>
+        </div>
+        <div class="f">
+          <label for="in-years">Investment time frame (years)</label>
+          <input type="number" id="in-years" min="1" max="30" value="10" inputmode="numeric">
+          <div class="chips" id="yr-chips">
+            <button type="button" class="chip" data-y="5">5</button>
+            <button type="button" class="chip" data-y="7">7</button>
+            <button type="button" class="chip" data-y="10">10</button>
+            <button type="button" class="chip" data-y="15">15</button>
+          </div>
+        </div>
+      </div>
+      <div class="f">
+        <label for="in-by">Prepared by (optional)</label>
+        <input type="text" id="in-by" autocomplete="off" placeholder="Your name">
+      </div>
+      <label class="taxsw intake-tax"><input type="checkbox" data-taxtoggle> Include tax in the projection <span>(capital gains, exemption and slab rates; can be changed later)</span></label>
+      <div class="form-actions">
+        <button type="submit" class="btn primary">Build projection</button>
+        <button type="button" class="btn" id="btn-sample">Start with a sample portfolio</button>
+      </div>
+      <p class="alt-link">Have a target amount instead? <a href="#goal">Work out what to invest →</a><br>Planning a monthly income from a lumpsum? <a href="#swp">Open SWP income →</a></p>
+    </form>
+  </div>
+</main>
+
+<!-- ============ DASHBOARD ============ -->
+<div id="dash" hidden>
+  <div class="wrap">
+    <div class="top">
+      <nav class="tabs" aria-label="Tools"><a href="#plan" aria-current="page">Plan from investments</a><a href="#goal">Plan to a target</a><a href="#swp">SWP income</a></nav>
+      <label class="taxsw"><input type="checkbox" data-taxtoggle> Include tax</label>
+      <label class="by" for="c-by">Prepared by <input type="text" id="c-by" placeholder="Your name" autocomplete="off"></label>
+      <button class="btn" id="btn-xlsx" type="button"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M2 6h12M2 10h12M6 2v12"/></svg>Excel</button>
+      <button class="btn primary" id="btn-pdf" type="button"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 2v8m0 0L5 7m3 3 3-3M3 13h10"/></svg>PDF</button>
+      <button class="btn ghost" id="btn-new" type="button">New client</button>
+    </div>
+
+    <header class="hero">
+      <div class="who">
+        <input type="text" id="c-name" aria-label="Client name" autocomplete="off">
+        <div class="meta">
+          <label for="c-age">Age <input type="number" id="c-age" min="1" max="100" class="num"></label>
+          <label for="c-years">Time frame
+            <input type="range" id="c-years-r" min="1" max="30" aria-label="Time frame slider">
+            <input type="number" id="c-years" min="1" max="30" class="num"> years</label>
+          <span id="c-span" class="num"></span>
+        </div>
+      </div>
+      <div class="headline">
+        <div class="lab" id="h-lab">Projected value</div>
+        <div class="big num" id="h-big">₹0</div>
+        <div class="sentence" id="h-sent"></div>
+      </div>
+    </header>
+
+    <div class="tiles" id="tiles"></div>
+
+    <section>
+      <div class="sec-head"><h2>How the portfolio grows</h2><p id="chart-sub"></p></div>
+      <div class="panel">
+        <div class="chart-top"><div class="legend" id="legend"></div>
+          <div class="toggle" role="group" aria-label="Chart view"><button type="button" data-cm="growth" aria-pressed="true">Invested vs growth</button><button type="button" data-cm="segment" aria-pressed="false">By segment</button></div></div>
+        <div class="chart-wrap" id="chart"></div>
+        <div class="assume">
+          <label for="a-spread">Range if returns are <input class="inl num" id="a-spread" type="number" min="0" max="10" step="0.5">% lower or higher: <b class="num" id="a-range"></b></label>
+          <label for="a-infl">At <input class="inl num" id="a-infl" type="number" min="0" max="15" step="0.5">% inflation, that is <b class="num" id="a-real"></b> in today's money</label>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="sec-head"><h2>Investments</h2><p>Every name, amount and expected return can be changed. The projection updates as you type. Amounts accept shortcuts like 25L or 1.5cr.</p></div>
+      <div id="segments"></div>
+    </section>
+
+    <section>
+      <div class="sec-head"><h2>Where the money sits</h2><p>By segment and by category.</p></div>
+      <div class="alloc-grid">
+        <div class="panel"><div id="alloc"></div></div>
+        <div class="panel"><div id="catmix"></div></div>
+      </div>
+    </section>
+
+    <section>
+      <div class="sec-head"><h2>Year by year</h2><p>Value at the end of each year.</p></div>
+      <div class="panel scroll"><table id="ytable"></table></div>
+    </section>
+
+    <section>
+      <div class="sec-head"><h2>Portfolio summary</h2><p id="sum-sub">Built from everything above.</p></div>
+      <div class="panel"><div class="sum-grid"><div class="pie" id="pie"></div><div class="scroll" id="sumtable"></div></div><p class="sum-note" id="sum-note"></p></div>
+    </section>
+
+    <section class="taxonly">
+      <div class="sec-head"><h2>Tax on complete exit</h2><p id="tax-sub"></p></div>
+      <div class="panel">
+        <div class="assume" style="margin-top:0;padding-top:0;border-top:0"><label for="a-tax">Long-term capital gains tax <input class="inl num" id="a-tax" type="number" min="0" max="40" step="0.5">% on gains</label><label for="a-ex">Yearly exemption ₹ <input class="inl num" id="a-ex" type="text" inputmode="decimal" style="width:96px"></label><label for="a-slab">Bond interest at income slab <input class="inl num" id="a-slab" type="number" min="0" max="45" step="0.5">%</label></div>
+        <div class="scroll" id="taxtable" style="margin-top:10px"></div>
+        <p class="sum-note">Capital gains are taxed at the long-term rate shown, on the gain (value minus amount invested) after the yearly exemption (₹1.25 L under Section 112A), deducted once since everything is sold in one year. Bond interest is taxed at the client's income slab rate, with no exemption; in practice it is taxed each year as it is earned, so it is shown here as a total. Debt funds bought after 1 April 2023 and gains held under a year are also taxed differently; check with a tax adviser.</p>
+      </div>
+    </section>
+
+    <section>
+      <div class="finish">
+        <div>
+          <h2>Ready to hand over?</h2>
+          <p>Save this projection exactly as it is on screen.</p>
+        </div>
+        <div class="acts">
+          <button class="btn gold" id="btn-pdf2" type="button">Generate PDF</button>
+          <button class="btn line" id="btn-xlsx2" type="button">Download Excel</button>
+        </div>
+      </div>
+      <p class="disc">Illustration only. These projections apply the expected rates of return shown above and are not a guarantee, assurance or forecast of future performance. Actual returns depend on market conditions and may be lower or negative. Investments in mutual funds, SIFs, portfolio management services, alternative investment funds, private equity, bonds and GIFT City funds are subject to market risks; read all scheme and offer documents carefully. Figures are before taxes, fees and exit loads. Lumpsum values compound annually; bond coupons are paid annually and either paid out or reinvested in the mutual funds listed; monthly investments compound monthly with instalments at the start of each month.</p>
+    </section>
+  </div>
+</div>
+<!-- ============ TARGET PLANNER ============ -->
+<div id="goal" hidden>
+  <div class="wrap">
+    <div class="top">
+      <nav class="tabs" aria-label="Tools"><a href="#plan">Plan from investments</a><a href="#goal" aria-current="page">Plan to a target</a><a href="#swp">SWP income</a></nav>
+      <label class="taxsw"><input type="checkbox" data-taxtoggle> Include tax</label>
+      <label class="by" for="g-by">Prepared by <input type="text" id="g-by" placeholder="Your name" autocomplete="off"></label>
+      <button class="btn" id="g-xlsx" type="button"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M2 6h12M2 10h12M6 2v12"/></svg>Excel</button>
+      <button class="btn primary" id="g-pdf" type="button"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 2v8m0 0L5 7m3 3 3-3M3 13h10"/></svg>PDF</button>
+    </div>
+
+    <header class="hero g-hero">
+      <div class="who">
+        <input type="text" id="g-name" aria-label="Client name" placeholder="Client name" autocomplete="off">
+        <div class="meta"><label for="g-age">Age <input type="number" id="g-age" min="1" max="100" class="num"></label><span id="g-span" class="num"></span></div>
+        <div class="ginputs">
+          <div class="gf"><label for="g-target">Target amount (₹)</label><input type="text" id="g-target" inputmode="decimal" class="num"><small id="g-target-h"></small></div>
+          <div class="gf"><label for="g-years">Time frame (years)</label><div class="rng"><input type="range" id="g-years-r" min="1" max="30" aria-label="Time frame slider"><input type="number" id="g-years" min="1" max="30" class="num"></div></div>
+          <div class="gf"><label for="g-ret">Portfolio return (% p.a.)</label><input type="number" id="g-ret" min="0" max="40" step="0.5" class="num"><small id="g-ret-h"></small></div>
+          <div class="gf wide"><span class="flab">How the client will invest</span>
+            <div class="toggle" role="group" aria-label="How the client will invest" id="g-mode"><button type="button" data-gm="lump">Lumpsum</button><button type="button" data-gm="sip">Monthly SIP</button><button type="button" data-gm="both">Lumpsum + SIP</button></div></div>
+          <div class="gf" id="g-lump-f"><label for="g-lump">Lumpsum available today (₹)</label><input type="text" id="g-lump" inputmode="decimal" class="num"><small id="g-lump-h"></small></div>
+          <div class="gf" id="g-step-f"><label for="g-step">SIP step-up (% a year)</label><input type="number" id="g-step" min="0" max="50" step="1" class="num"></div>
+        </div>
+      </div>
+      <div class="headline">
+        <div class="lab" id="g-lab">Start with</div>
+        <div class="big num" id="g-big">₹0</div>
+        <div class="sentence" id="g-sent"></div>
+      </div>
+    </header>
+
+    <div class="tiles" id="g-tiles"></div>
+
+    <section>
+      <div class="sec-head"><h2>Path to the target</h2><p id="g-chart-sub"></p></div>
+      <div class="panel"><div class="chart-top"><div class="legend" id="g-legend"></div></div><div class="chart-wrap" id="g-chart"></div></div>
+    </section>
+
+    <section>
+      <div class="sec-head"><h2>How to split it</h2><p>Change any component, share or return. Shares should add up to 100%.</p></div>
+      <div class="panel">
+        <div class="g-status" id="g-status"></div>
+        <div class="scroll"><table class="gt" id="g-table"></table></div>
+        <button class="add" type="button" id="g-add" style="margin:10px 0 0">+ Add component</button>
+        <div class="g-bottom"><div class="pie" id="g-pie"></div><div id="g-legend2" class="g-leg"></div></div>
+        <div class="assume">
+          <span>Work out the amount using</span>
+          <div class="toggle" role="group" aria-label="Return used" id="g-basis"><button type="button" data-gb="target">The portfolio return</button><button type="button" data-gb="mix">The mix's own return</button></div>
+        </div>
+        <p class="sum-note" id="g-note"></p>
+      </div>
+    </section>
+
+    <section class="taxonly">
+      <div class="sec-head"><h2>Tax on complete exit</h2><p id="g-tax-sub"></p></div>
+      <div class="panel">
+        <div class="assume" style="margin-top:0;padding-top:0;border-top:0"><label for="g-tax">Long-term capital gains tax <input class="inl num" id="g-tax" type="number" min="0" max="40" step="0.5">% on gains</label><label for="g-ex">Yearly exemption ₹ <input class="inl num" id="g-ex" type="text" inputmode="decimal" style="width:96px"></label><label for="g-slab">Income slab rate <input class="inl num" id="g-slab" type="number" min="0" max="45" step="0.5">% for components taxed at slab</label></div>
+        <div class="tiles" id="g-taxtiles" style="margin-top:12px"></div>
+        <p class="sum-note">Capital gains are taxed at the long-term rate shown, on the gain (value minus amount invested) after the yearly exemption (₹1.25 L under Section 112A), deducted once since everything is sold in one year. Bond interest is taxed at the client's income slab rate, with no exemption; in practice it is taxed each year as it is earned, so it is shown here as a total. Debt funds bought after 1 April 2023 and gains held under a year are also taxed differently; check with a tax adviser.</p>
+      </div>
+    </section>
+
+    <section>
+      <div class="finish">
+        <div><h2>Ready to hand over?</h2><p>Save this target plan exactly as it is on screen.</p></div>
+        <div class="acts"><button class="btn gold" id="g-pdf2" type="button">Generate PDF</button><button class="btn line" id="g-xlsx2" type="button">Download Excel</button></div>
+      </div>
+      <p class="disc">Illustration only. The amounts needed are worked out from the return assumed and are not a guarantee, assurance or forecast of future performance. Actual returns depend on market conditions and may be lower or negative, in which case the target may not be reached. Investments in mutual funds, SIFs, PMS, AIFs, private equity and bonds are subject to market risks; read all scheme and offer documents carefully. Figures are before taxes, fees and exit loads. Lumpsum values compound annually; monthly SIPs compound monthly with instalments at the start of each month. Minimum investment sizes shown are the SEBI minimums for PMS (₹50 L), AIF (₹1 Cr) and SIF (₹10 L); check current rules before advising.</p>
+    </section>
+  </div>
+</div>
+<!-- ============ SWP INCOME ============ -->
+<div id="swp" hidden>
+  <div class="wrap">
+    <div class="top">
+      <nav class="tabs" aria-label="Tools"><a href="#plan">Plan from investments</a><a href="#goal">Plan to a target</a><a href="#swp" aria-current="page">SWP income</a></nav>
+      <label class="taxsw"><input type="checkbox" data-taxtoggle> Include tax</label>
+      <label class="by" for="s-by">Prepared by <input type="text" id="s-by" placeholder="Your name" autocomplete="off"></label>
+      <button class="btn" id="s-xlsx" type="button"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M2 6h12M2 10h12M6 2v12"/></svg>Excel</button>
+      <button class="btn primary" id="s-pdf" type="button"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 2v8m0 0L5 7m3 3 3-3M3 13h10"/></svg>PDF</button>
+    </div>
+
+    <header class="hero g-hero">
+      <div class="who">
+        <input type="text" id="s-name" aria-label="Client name" placeholder="Client name" autocomplete="off">
+        <div class="meta"><label for="s-age">Age <input type="number" id="s-age" min="1" max="100" class="num"></label><span id="s-span" class="num"></span></div>
+        <div class="ginputs">
+          <div class="gf"><label for="s-lump">Lumpsum for SWP (₹)</label><input type="text" id="s-lump" inputmode="decimal" class="num"><small id="s-lump-h"></small></div>
+          <div class="gf"><label for="s-years">Time frame (years)</label><div class="rng"><input type="range" id="s-years-r" min="1" max="30" aria-label="Time frame slider"><input type="number" id="s-years" min="1" max="30" class="num"></div></div>
+          <div class="gf"><label for="s-start">First withdrawal</label><input type="month" id="s-start" class="num" style="border:1px solid var(--line);background:var(--field);border-radius:8px;padding:7px 10px;font-size:16px;font-weight:600"></div>
+        </div>
+      </div>
+      <div class="headline">
+        <div class="lab" id="s-lab">Income</div>
+        <div class="big num" id="s-big">₹0</div>
+        <div class="sentence" id="s-sent"></div>
+      </div>
+    </header>
+
+    <div class="tiles" id="s-tiles"></div>
+
+    <section>
+      <div class="sec-head"><h2>Where the lumpsum is invested</h2><p>Add the mutual funds, SIFs and bonds you are suggesting. Shares should add up to 100%.</p></div>
+      <div class="panel">
+        <div class="g-status" id="s-status"></div>
+        <div class="scroll"><table class="gt" id="s-table"></table></div>
+        <div class="add-row" style="margin:12px 0 0"><button class="add" type="button" data-sadd="mf" style="margin:0">+ Add mutual fund</button><button class="add" type="button" data-sadd="sif" style="margin:0">+ Add SIF</button><button class="add" type="button" data-sadd="bond" style="margin:0">+ Add bond</button></div>
+      </div>
+    </section>
+
+    <section>
+      <div class="sec-head"><h2>Withdrawal</h2><p>How much is paid back to the client, and how often.</p></div>
+      <div class="panel">
+        <div class="ginputs" style="margin-top:0">
+          <div class="gf"><label for="s-rate">Withdrawal (% of the lumpsum a year)</label><input type="number" id="s-rate" min="0" max="50" step="0.25" class="num"><small id="s-rate-h"></small></div>
+          <div class="gf"><span class="flab">Paid out</span><div class="toggle" role="group" aria-label="How often" id="s-freq"><button type="button" data-sf="monthly">Monthly</button><button type="button" data-sf="yearly">Yearly</button></div><small id="s-freq-h"></small></div>
+          <div class="gf taxonly"><label for="s-tax">Tax on gains in each withdrawal (%)</label><input type="number" id="s-tax" min="0" max="40" step="0.5" class="num"><small>Long-term capital gains, from year 2</small></div>
+          <div class="gf taxonly"><label for="s-ex">Yearly exemption on gains (₹)</label><input type="text" id="s-ex" inputmode="decimal" class="num"><small>₹1.25 L under Section 112A; used up by each year's withdrawals</small></div>
+          <div class="gf taxonly"><label for="s-slab">Income slab rate for bond interest (%)</label><input type="number" id="s-slab" min="0" max="45" step="0.5" class="num"><small>Taxed every year as earned, from year 1</small></div>
+          <div class="gf"><label for="s-inc">Raise the bond withdrawal each year by (%)</label><input type="number" id="s-inc" min="0" max="20" step="0.5" class="num"><small>Funds and SIFs already move with their value</small></div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="sec-head"><h2>Value and income over time</h2><p id="s-chart-sub"></p></div>
+      <div class="panel"><div class="chart-top"><div class="legend" id="s-legend"></div></div><div class="chart-wrap" id="s-chart"></div></div>
+    </section>
+
+    <section>
+      <div class="sec-head"><h2>Year by year</h2><p id="s-tsub"></p></div>
+      <div class="panel scroll"><table id="s-ytable" class="sy"></table></div>
+    </section>
+
+    <section>
+      <div class="finish">
+        <div><h2>Ready to hand over?</h2><p>Save this SWP plan exactly as it is on screen.</p></div>
+        <div class="acts"><button class="btn gold" id="s-pdf2" type="button">Generate PDF</button><button class="btn line" id="s-xlsx2" type="button">Download Excel</button></div>
+      </div>
+      <p class="disc">Illustration only. Withdrawals and values are worked out from the expected returns shown and are not a guarantee, assurance or forecast of future performance. Actual returns depend on market conditions and may be lower or negative, in which case the money may run out sooner. Each fund grows at its own expected return, compounding monthly for monthly payouts and yearly for yearly payouts; each year, mutual funds and SIFs pay out the withdrawal % of their value at the start of that year, and bonds pay out the withdrawal % of the amount first invested in them; the yearly amount is paid in equal parts at the end of each month (or once at year end) by each fund. Bond values grow at the yield entered, with coupons kept in the portfolio and taxed as they are earned. Tax is long-term capital gains tax at the rate shown on the gains part of each withdrawal from year 2, worked out on average cost; year 1 withdrawals are shown without tax. Each plan year, the first ₹1.25 L of gains (the Section 112A exemption, editable above) is tax-free, so tax starts once a year's gains pass it; plan years are treated as tax years. Bond interest is taxed at the income slab rate entered, every year as it is earned (including year 1), with no exemption. Debt funds bought after 1 April 2023 are also taxed at slab rates; check with a tax adviser. Figures are before exit loads and fees. Investments in mutual funds, SIFs and bonds are subject to market risks; read all scheme and offer documents carefully.</p>
+    </section>
+  </div>
+</div>
+<div id="toast" hidden role="status"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+<script>
+"use strict";
+/* ---------- definitions ---------- */
+const SEGS=[
+ {k:'mf', name:'Mutual Funds', desc:'One-time investments in mutual fund schemes', mode:'lump', ret:12, risk:5, add:'Add mutual fund', ph:'Fund name'},
+ {k:'sip',name:'SIP Investments', desc:'Monthly instalments, with an optional yearly step-up', mode:'sip', ret:12, risk:5, add:'Add SIP', ph:'Fund name'},
+ {k:'sif',name:'SIF', desc:'Specialised Investment Funds', mode:'lump', ret:13, risk:5, add:'Add SIF', ph:'SIF strategy name'},
+ {k:'pms',name:'PMS', desc:'Portfolio Management Services', mode:'lump', ret:15, risk:5, add:'Add PMS', ph:'PMS name'},
+ {k:'aif',name:'AIF', desc:'Alternative Investment Funds', mode:'lump', ret:15, risk:5, add:'Add AIF', ph:'AIF name'},
+ {k:'pe', name:'Private Equity', desc:'Unlisted and pre-IPO investments', mode:'lump', ret:18, risk:5, add:'Add private equity', ph:'Company or fund name'},
+ {k:'bond',name:'Bonds', desc:'Government, corporate and tax-free bonds, NCDs', mode:'lump', ret:8, risk:1, add:'Add bond', ph:'Bond name or issuer', bond:true},
+ {k:'gift',name:'GIFT City Funds', desc:'Funds and strategies set up in GIFT City IFSC', mode:'lump', ret:11, add:'Add GIFT City fund', ph:'Fund name'}
+];
+const SEG_HEX=['#2a78d6','#eb6834','#1baf7a','#eda100','#e87ba4','#008300','#6250d6','#e34948'];
+const MF_CATS=[
+ ['Equity',['Multi Cap Fund','Large Cap Fund','Large & Mid Cap Fund','Mid Cap Fund','Small Cap Fund','Flexi Cap Fund','Focused Fund','Value Fund','Contra Fund','Dividend Yield Fund','Sectoral / Thematic Fund','ELSS (Tax Saver)']],
+ ['Hybrid',['Conservative Hybrid Fund','Balanced Hybrid Fund','Aggressive Hybrid Fund','Balanced Advantage / Dynamic Asset Allocation','Multi Asset Allocation Fund','Arbitrage Fund','Equity Savings Fund']],
+ ['Debt',['Overnight Fund','Liquid Fund','Ultra Short Duration Fund','Low Duration Fund','Money Market Fund','Short Duration Fund','Medium Duration Fund','Medium to Long Duration Fund','Long Duration Fund','Dynamic Bond Fund','Corporate Bond Fund','Credit Risk Fund','Banking and PSU Fund','Gilt Fund','Gilt Fund with 10-year Constant Duration','Floater Fund']],
+ ['Solution oriented',['Retirement Fund',"Children's Fund"]],
+ ['Other',['Index Fund','ETF','Fund of Funds (Domestic)','Fund of Funds (Overseas)','Gold / Silver Fund']]
+];
+const CATS={
+ mf:MF_CATS, sip:MF_CATS,
+ sif:[['Equity',['Equity Long-Short Fund','Equity Ex-Top 100 Long-Short Fund','Sector Rotation Long-Short Fund']],['Debt',['Debt Long-Short Fund','Sectoral Debt Long-Short Fund']],['Hybrid',['Active Asset Allocator Long-Short Fund','Hybrid Long-Short Fund']]],
+ pms:[['PMS strategy',['Large Cap','Multi Cap / Flexi Cap','Mid & Small Cap','Small Cap','Thematic / Sectoral','Value','Quant','Multi Asset','Debt / Fixed Income']]],
+ aif:[['AIF category',['Category I (Venture / Infra / SME)','Category II (Private Equity / Credit / Real Estate)','Category III (Long-Only)','Category III (Long-Short)']]],
+ pe:[['Private equity type',['Pre-IPO','Unlisted Shares','Venture Capital','Growth Equity','Buyout','Real Estate']]],
+ gift:[['GIFT City',['Global / US Equity Feeder Fund','Global Equity Fund','India Equity Fund (USD)','Fund of Funds','ETF','AIF Category I / II','AIF Category III','PMS in GIFT City','USD Fixed Income / Bond Fund']]],
+ bond:[['Bond type',['Government Securities (G-Sec)','State Development Loans (SDL)','Treasury Bills','RBI Floating Rate Savings Bonds','PSU Bonds','Corporate Bonds (AAA)','Corporate Bonds (AA and below)','Tax-Free Bonds','54EC Capital Gain Bonds','NCDs','Perpetual / AT1 Bonds','Sovereign Gold Bonds']]]
+};
+const CAT_DEF={mf:'Flexi Cap Fund',sip:'Flexi Cap Fund',sif:'Equity Long-Short Fund',pms:'Multi Cap / Flexi Cap',aif:'Category III (Long-Short)',pe:'Pre-IPO',bond:'PSU Bonds',gift:'Global / US Equity Feeder Fund'};
+const catLabel=k=>k==='mf'||k==='sip'?'Fund category':'Category';
+function catSelect(h){
+  const groups=CATS[h.seg],flat=groups.flatMap(g=>g[1]),cur=h.cat||CAT_DEF[h.seg];
+  const extra=flat.includes(cur)?'':`<option selected>${esc(cur)}</option>`;
+  return `<select class="cat-sel" id="${h.id}-cat" data-f="cat">${extra}${groups.map(g=>`<optgroup label="${esc(g[0])}">${g[1].map(c=>`<option${c===cur?' selected':''}>${esc(c)}</option>`).join('')}</optgroup>`).join('')}</select>`;
+}
+const RISK_HEX=['#cfe0f7','#a6c5f0','#79a6e6','#4f86d6','#2d63b8','#173f85'];
+const YEAR0=new Date().getFullYear();
+const MF_FALLBACK=12; // used for reinvested coupons when no mutual funds are listed
+const isBond=h=>h.seg==='bond';
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
+
+let state=blank();
+// Tax is off unless the advisor ticks "Include tax"; one setting shared by all three pages.
+let TAX=false;try{TAX=localStorage.getItem('wealth-tax-on')==='1'}catch(e){}
+function applyTax(){document.body.classList.toggle('notax',!TAX);document.querySelectorAll('[data-taxtoggle]').forEach(c=>c.checked=TAX)}
+document.addEventListener('change',e=>{if(!e.target.matches('[data-taxtoggle]'))return;TAX=e.target.checked;try{localStorage.setItem('wealth-tax-on',TAX?'1':'0')}catch(err){}
+  applyTax();if(!$('dash').hidden)refresh();if(window.grefresh&&!$('goal').hidden)grefresh();if(window.srefresh&&!$('swp').hidden){srenderTable&&srenderTable();srefresh()}});
+applyTax();
+function blank(){return {tax:12.5,exempt:125000,slab:30,chartMode:'growth',started:false,name:'',age:45,years:10,by:'',infl:6,spread:2,holdings:[],seq:1}}
+function newHolding(k,o={}){const s=SEGS.find(x=>x.k===k);return Object.assign({id:'h'+(state.seq++),seg:k,name:'',cat:CAT_DEF[k],mode:s.mode,amount:0,step:0,ret:s.ret},s.bond?{coupon:'reinvest',mat:5}:{},o)}
+function sample(){
+  const add=(k,o)=>state.holdings.push(newHolding(k,o));
+  add('mf',{name:'Large & Mid Cap Fund (sample)',cat:'Large & Mid Cap Fund',amount:1500000,ret:12});
+  add('mf',{name:'Balanced Advantage Fund (sample)',cat:'Balanced Advantage / Dynamic Asset Allocation',amount:1000000,ret:10});
+  add('sip',{name:'Flexi Cap Fund SIP (sample)',cat:'Flexi Cap Fund',amount:50000,step:10,ret:12});
+  add('sif',{name:'Equity Long-Short SIF (sample)',cat:'Equity Long-Short Fund',amount:1000000,ret:12.5});
+  add('pms',{name:'Multicap PMS (sample)',cat:'Multi Cap / Flexi Cap',amount:5000000,ret:15});
+  add('aif',{name:'Category III Long-Short AIF (sample)',cat:'Category III (Long-Short)',amount:10000000,ret:14});
+  add('pe',{name:'Pre-IPO Growth Fund (sample)',cat:'Pre-IPO',amount:2500000,ret:18});
+  add('bond',{name:'AAA PSU Bond (sample)',cat:'PSU Bonds',amount:2000000,ret:7.5,mat:5,coupon:'reinvest'});
+  add('gift',{name:'US Equity Feeder Fund (sample)',cat:'Global / US Equity Feeder Fund',amount:1500000,ret:11});
+  add('bond',{name:'Tax-Free Bond (sample)',cat:'Tax-Free Bonds',amount:1000000,ret:6,mat:7,coupon:'payout'});
+}
+
+/* ---------- money ---------- */
+const nf=new Intl.NumberFormat('en-IN',{maximumFractionDigits:0});
+const inr=n=>'₹'+nf.format(Math.round(n));
+function short(n,cur='₹'){
+  const a=Math.abs(n);
+  if(a>=1e7) return cur+trim(n/1e7)+' Cr';
+  if(a>=1e5) return cur+trim(n/1e5)+' L';
+  return cur+nf.format(Math.round(n));
+}
+function trim(x){return (Math.abs(x)>=100?x.toFixed(1):x.toFixed(2)).replace(/\.?0+$/,'')}
+function parseAmt(s){
+  s=String(s).toLowerCase().replace(/[₹,\s]|rs\.?|inr/g,'');
+  const m=s.match(/^(\d*\.?\d+)(k|l|lac|lacs|lakh|lakhs|cr|crore|crores)?$/);
+  if(!m) return NaN;
+  let v=parseFloat(m[1]);const u=m[2]||'';
+  if(u==='k') v*=1e3; else if(u[0]==='l') v*=1e5; else if(u[0]==='c') v*=1e7;
+  return v;
+}
+
+/* ---------- maths ---------- */
+// Returns value and cumulative amount invested at the end of each year 0..Y for one holding.
+const filled=h=>(+h.amount||0)>0;
+const mfTargets=()=>state.holdings.filter(x=>(x.seg==='mf'||x.seg==='sip')&&filled(x));
+function series(h,Y,bump=0){
+  const r=Math.max(0,(+h.ret||0)+bump)/100, A=+h.amount||0, val=[],inv=[],pay=[],cmf=[];
+  if(isBond(h)){
+    // Annual coupon at the bond's own rate (not shifted by the range). On maturity the principal
+    // rolls into a similar bond at the same coupon, so principal and coupon carry on to year Y.
+    const c=A*(+h.ret||0)/100, mfs=mfTargets();
+    const rates=(mfs.length?mfs.map(x=>+x.ret||0):[MF_FALLBACK]).map(x=>Math.max(0,x+bump)/100);
+    let pool=rates.map(()=>0),paid=0;
+    val.push(A);inv.push(A);pay.push(0);cmf.push(0);
+    for(let y=1;y<=Y;y++){
+      pool=pool.map((p,i)=>p*(1+rates[i]));
+      if(h.coupon==='payout') paid+=c; else pool=pool.map(p=>p+c/rates.length);
+      const m=pool.reduce((a,b)=>a+b,0);
+      val.push(A+m);inv.push(A);pay.push(paid);cmf.push(m);
+    }
+    return {val,inv,pay,cmf};
+  }
+  if(h.mode==='lump'){
+    for(let y=0;y<=Y;y++){val.push(A*Math.pow(1+r,y));inv.push(A)}
+  }else{
+    const i=r/12,s=(+h.step||0)/100;let bal=0,put=0;
+    val.push(0);inv.push(0);
+    for(let y=1;y<=Y;y++){
+      const m=A*Math.pow(1+s,y-1);
+      for(let k=0;k<12;k++){bal=(bal+m)*(1+i);put+=m}
+      val.push(bal);inv.push(put);
+    }
+  }
+  return {val,inv,pay:val.map(()=>0),cmf:val.map(()=>0)};
+}
+function compute(Yo){
+  const Y=Yo||state.years, z=()=>Array(Y+1).fill(0);
+  const R={Y,total:z(),inv:z(),low:z(),high:z(),pay:z(),seg:{},segInv:{},segRet:{},rows:{},lump:0,sip:0,wret:0,cat:{}};
+  SEGS.forEach(s=>{R.seg[s.k]=z();R.segInv[s.k]=z()});
+  let wsum=0;
+  for(const h of state.holdings){
+    const a=series(h,Y),lo=series(h,Y,-state.spread),hi=series(h,Y,state.spread);
+    R.rows[h.id]={fv:a.val[Y],inv:a.inv[Y],pay:a.pay[Y],cmf:a.cmf[Y]};
+    for(let y=0;y<=Y;y++){R.total[y]+=a.val[y];R.inv[y]+=a.inv[y];R.low[y]+=lo.val[y];R.high[y]+=hi.val[y];R.seg[h.seg][y]+=a.val[y];R.segInv[h.seg][y]+=a.inv[y];R.pay[y]+=a.pay[y]}
+    if(h.mode==='lump') R.lump+=+h.amount||0; else R.sip+=+h.amount||0;
+    wsum+=a.inv[Y]*(+h.ret||0);R.segRet[h.seg]=(R.segRet[h.seg]||0)+a.inv[Y]*(+h.ret||0);
+    const ck=h.seg+'|'+(h.cat||CAT_DEF[h.seg]);R.cat[ck]=(R.cat[ck]||0)+a.inv[Y];
+  }
+  R.fv=R.total[Y];R.put=R.inv[Y];R.paid=R.pay[Y];R.gain=R.fv-R.put;R.wret=R.put?wsum/R.put:0;
+  R.active=SEGS.filter(s=>state.holdings.some(h=>h.seg===s.k&&filled(h)));
+  SEGS.forEach(s=>{const i=R.segInv[s.k][Y];R.segRet[s.k]=i?(R.segRet[s.k]||0)/i:0});
+  return R;
+}
+
+// Portfolio summary: per segment, invested over the plan, allocation, weighted return and value at 5, 7 and 10 years.
+function summary(){
+  const Y=state.years,H=[5,7,10];if(!H.includes(Y))H.push(Y);H.sort((a,b)=>a-b);
+  const R=compute(),RX=compute(Math.max(...H));
+  const rows=R.active.map(s=>({s,inv:R.segInv[s.k][Y],ret:R.segRet[s.k],vals:H.map(h=>RX.seg[s.k][h]),pay:RX.pay}));
+  rows.forEach(r=>r.pct=R.put?r.inv/R.put*100:0);
+  return {Y,H,R,RX,rows,tot:{inv:R.put,ret:R.wret,vals:H.map(h=>RX.total[h])},beyond:H.some(h=>h>Y)};
+}
+function matText(h,Y){
+  const M=Math.max(1,+h.mat||1),first=YEAR0+M;
+  if(M>Y) return `Matures ${first}, after ${YEAR0+Y}`;
+  if(M===Y) return `Matures ${first}`;
+  return `Matures ${first}, rolls over`;
+}
+function couponText(h){
+  const n=mfTargets().length;
+  if(h.coupon==='payout') return 'Coupon paid out to the client';
+  return n?`Coupon reinvested equally in the ${n} mutual fund${n>1?'s':''} above`:`Coupon reinvested in mutual funds at ${MF_FALLBACK}% until funds are added above`;
+}
+/* ---------- rendering ---------- */
+function show(){
+  if(location.hash==='#goal'||location.hash==='#swp'){$('intake').hidden=true;$('dash').hidden=true;return}
+  $('intake').hidden=state.started;$('dash').hidden=!state.started;
+  if(!state.started) return;
+  $('c-name').value=state.name;$('c-age').value=state.age;$('c-years').value=state.years;$('c-years-r').value=state.years;
+  $('c-by').value=state.by;$('a-tax').value=state.tax??12.5;$('a-ex').value=nf.format(Math.round(state.exempt??125000));$('a-slab').value=state.slab??30;$('a-infl').value=state.infl;$('a-spread').value=state.spread;
+  renderSegments();refresh();
+}
+function bondRowHTML(h){
+  const id=h.id,pay=h.coupon==='payout';
+  return `<div class="row" data-id="${id}">
+   <div><span class="lab">Name</span><input type="text" id="${id}-name" data-f="name" value="${esc(h.name)}" placeholder="Bond name or issuer" autocomplete="off"></div>
+   <div><span class="lab">${catLabel(h.seg)}</span>${catSelect(h)}</div>
+   <div><span class="lab">Coupon</span><select id="${id}-coupon" data-f="coupon"><option value="reinvest"${pay?'':' selected'}>Reinvest in MFs</option><option value="payout"${pay?' selected':''}>Pay out</option></select></div>
+   <div><span class="lab">Amount (₹)</span><input class="r" type="text" inputmode="decimal" id="${id}-amount" data-f="amount" value="${h.amount?nf.format(h.amount):''}" placeholder="0"><div class="hint" id="${id}-hint"></div></div>
+   <div><span class="lab">Maturity (yrs)</span><div class="ret yrs"><input class="r" type="number" id="${id}-mat" data-f="mat" min="1" max="40" step="1" value="${h.mat}" style="color:inherit;font-weight:600"></div><div class="hint" id="${id}-mhint"></div></div>
+   <div><span class="lab">Yield % p.a.</span><div class="ret"><input class="r" type="number" id="${id}-ret" data-f="ret" min="0" max="30" step="0.25" value="${h.ret}"></div><div class="hint"></div></div>
+   <div class="out num" id="${id}-out"></div>
+   <button class="del" type="button" data-del="${id}" aria-label="Remove ${esc(h.name||'this bond')}" title="Remove">×</button>
+  </div>`;
+}
+function rowHTML(h){
+  if(isBond(h)) return bondRowHTML(h);
+  const id=h.id,sip=h.mode==='sip';
+  return `<div class="row" data-id="${id}">
+   <div><span class="lab">Name</span><input type="text" id="${id}-name" data-f="name" value="${esc(h.name)}" placeholder="${esc(SEGS.find(s=>s.k===h.seg).ph)}" autocomplete="off">${h.seg==='mf'?`<div class="tosip" id="${id}-tosip">${sipTwin(h)?'<span class="in-sip">✓ Also in SIP</span>':`<button type="button" class="mini" data-tosip="${id}">+ Also invest as SIP</button>`}</div>`:''}</div>
+   <div><span class="lab">${catLabel(h.seg)}</span>${catSelect(h)}</div>
+   <div><span class="lab">Type</span><select id="${id}-mode" data-f="mode"><option value="lump"${sip?'':' selected'}>Lumpsum</option><option value="sip"${sip?' selected':''}>Monthly SIP</option></select></div>
+   <div><span class="lab">Amount (₹)</span><input class="r" type="text" inputmode="decimal" id="${id}-amount" data-f="amount" value="${h.amount?nf.format(h.amount):''}" placeholder="0"><div class="hint" id="${id}-hint"></div></div>
+   <div><span class="lab">Step-up / yr</span><div class="ret"><input class="r" type="number" id="${id}-step" data-f="step" min="0" max="50" step="1" value="${h.step}" ${sip?'':'disabled'} style="color:inherit;font-weight:600${sip?'':';opacity:.35'}"></div><div class="hint"></div></div>
+   <div><span class="lab">Expected return p.a.</span><div class="ret"><input class="r" type="number" id="${id}-ret" data-f="ret" min="0" max="60" step="0.5" value="${h.ret}"></div><div class="hint"></div></div>
+   <div class="out num" id="${id}-out"></div>
+   <button class="del" type="button" data-del="${id}" aria-label="Remove ${esc(h.name||'this investment')}" title="Remove">×</button>
+  </div>`;
+}
+// SIP rows created from a mutual fund keep its name, category and expected return; the monthly amount is left for the advisor.
+const sipKey=h=>(h.name||'').trim().toLowerCase();
+const sipTwin=h=>sipKey(h)&&state.holdings.some(x=>x.seg==='sip'&&sipKey(x)===sipKey(h));
+const copyable=()=>state.holdings.filter(h=>h.seg==='mf'&&sipKey(h)&&!sipTwin(h));
+function copyAllBtn(){const n=copyable().length,named=state.holdings.some(h=>h.seg==='mf'&&sipKey(h));
+  if(!named) return '';
+  return n?`<button class="add copy" type="button" data-copyall="1">⇣ Copy ${n} fund${n>1?'s':''} from Mutual Funds</button>`:`<span class="in-sip" style="align-self:center">✓ All mutual funds are in SIP</span>`}
+function toSip(list){
+  const made=list.map(h=>{const n=newHolding('sip',{name:h.name,cat:h.cat||CAT_DEF.mf,ret:+h.ret||0,amount:0,step:0,mode:'sip'});state.holdings.push(n);return n});
+  renderSegments();refresh();
+  if(made.length){const f=$(made[0].id+'-amount');f.scrollIntoView({behavior:'smooth',block:'center'});f.focus({preventScroll:true});
+    toast(`${made.length} fund${made.length>1?'s':''} added to SIP Investments. Enter a monthly amount for ${made.length>1?'each':'it'}.`)}
+}
+function syncSipButtons(){
+  state.holdings.filter(h=>h.seg==='mf').forEach(h=>{const el=$(h.id+'-tosip');if(el)el.innerHTML=sipTwin(h)?'<span class="in-sip">✓ Also in SIP</span>':`<button type="button" class="mini" data-tosip="${h.id}">+ Also invest as SIP</button>`});
+  const seg=document.querySelector('[data-add="sip"]');if(seg){const row=seg.parentElement;row.innerHTML=seg.outerHTML+copyAllBtn()}
+}
+function renderSegments(){
+  $('segments').innerHTML=SEGS.map((s,i)=>{
+    const hs=state.holdings.filter(h=>h.seg===s.k);
+    return `<div class="seg" style="--c:var(--s${i+1})">
+     <div class="seg-head"><h3>${s.name}</h3><span class="desc">${s.desc}</span><div class="subtotal num" id="sub-${s.k}"></div></div>
+     <div class="rows">${hs.length?(s.bond
+        ?`<div class="row-h"><span>Name</span><span>Bond type</span><span>Coupon</span><span>Amount (₹)</span><span>Maturity</span><span>Yield</span><span>Projected value</span><span></span></div>`
+        :`<div class="row-h"><span>Name</span><span>${catLabel(s.k)}</span><span>Type</span><span>Amount (₹)</span><span>Step-up / yr</span><span>Expected return</span><span>Projected value</span><span></span></div>`)
+      +hs.map(rowHTML).join('')+(s.bond?`<div class="seg-note" id="bond-note"></div>`:''):`<div class="none">Nothing added yet.</div>`}</div>
+     <div class="add-row"><button class="add" type="button" data-add="${s.k}">+ ${s.add}</button>${s.k==='sip'?copyAllBtn():''}</div>
+    </div>`}).join('');
+}
+function refresh(){
+  const R=compute(),Y=R.Y,endYear=YEAR0+Y,nm=state.name.trim()||'The client';
+  $('c-span').textContent=`Age ${state.age} today, ${state.age+Y} in ${endYear}`;
+  $('h-lab').textContent=`Projected value in ${endYear}`;
+  $('h-big').textContent=short(R.fv);
+  $('h-sent').innerHTML=R.put>0
+    ?`${esc(nm)} puts in <b>${short(R.put)}</b> over ${Y} year${Y>1?'s':''}. At the expected returns shown, it grows <b class="up">${(R.fv/R.put).toFixed(1)}×</b> by age ${state.age+Y}.`
+      +(R.paid>0?` Bond coupons of <b>${short(R.paid)}</b> are also paid out along the way.`:'')
+    :`Add an investment below to see the projection.`;
+  $('h-sent').insertAdjacentHTML('beforeend',R.put>0?`<div><span class="pill-up">▲ ${short(R.gain)} expected gain</span></div>`:'');
+  $('chart-sub').textContent=`${YEAR0} to ${endYear}, at the expected return entered for each investment`;
+  $('tiles').innerHTML=[
+    ['Lumpsum invested today',short(R.lump),inr(R.lump)],
+    ['Monthly SIP',short(R.sip),R.sip?'starting amount per month':'none added'],
+    [`Total invested over ${Y} yrs`,short(R.put),inr(R.put)],
+    ['Expected gain',short(R.gain),R.put?`${Math.round(R.gain/R.put*100)}% on money invested`:'','gain'],
+    ['Weighted expected return',R.wret.toFixed(1)+'%','per year, across all investments'],
+    ...(R.paid>0?[['Bond coupons paid out',short(R.paid),`${short(R.paid/Y)} a year on average`]]:[])
+  ].map(t=>`<div class="tile ${t[3]||''}"><div class="lab">${t[0]}</div><div class="val num">${t[1]}</div><div class="sub num">${t[2]}</div></div>`).join('');
+  $('a-range').textContent=`${short(R.low[Y])} to ${short(R.high[Y])}`;
+  $('a-real').textContent=short(R.fv/Math.pow(1+state.infl/100,Y));
+  // rows and subtotals
+  for(const h of state.holdings){
+    const o=$(h.id+'-out'),r=R.rows[h.id];
+    if(o) o.innerHTML=`<span class="lab">Projected value in ${endYear}</span><b>${short(r.fv)}</b><small>${r.inv?`from ${short(r.inv)} invested`:'enter an amount'}</small>`;
+    if(isBond(h)&&o){
+      o.innerHTML=`<span class="lab">Projected value in ${endYear}</span><b>${short(r.fv)}</b><small>${!r.inv?'enter an amount':h.coupon==='payout'
+        ?`bond, plus <em>${short(r.pay)}</em> paid out`
+        :`${short(r.inv)} bond + ${short(r.cmf)} in MFs`}</small>`;
+      const mh=$(h.id+'-mhint');if(mh) mh.textContent=matText(h,Y);
+    }
+    const hint=$(h.id+'-hint');if(hint) hint.textContent=h.amount>=1e5?short(h.amount)+(h.mode==='sip'?' / month':''):(h.mode==='sip'&&h.amount?'per month':'');
+  }
+  const bn=$('bond-note');
+  if(bn){const n=mfTargets().length,re=state.holdings.some(h=>isBond(h)&&h.coupon!=='payout');
+    bn.textContent=`Coupons are paid once a year. When a bond matures before ${endYear}, the amount is assumed to go into a similar bond at the same yield until ${endYear}. The yearly coupon is the amount times the yield.`
+      +(re?(n?` Reinvested coupons are split equally across the ${n} mutual fund${n>1?'s':''} listed above and grow at each fund's expected return.`:` Reinvested coupons grow at ${MF_FALLBACK}% until you add a mutual fund above.`):'');}
+  SEGS.forEach(s=>{const e=$('sub-'+s.k);if(e) e.innerHTML=R.segInv[s.k][Y]?`${short(R.segInv[s.k][Y])} invested → <b>${short(R.seg[s.k][Y])}</b>`:''});
+  drawChart(R);drawAlloc(R);drawTable(R);drawSummary();drawTax(R);persist();
+}
+
+function niceMax(v){if(v<=0)return 1;const p=Math.pow(10,Math.floor(Math.log10(v)));for(const m of[1,1.2,1.6,2,2.4,3,4,6,8,10])if(m*p>=v)return m*p;return 10*p}
+let lastR=null;
+function drawChart(R){
+  lastR=R;const Y=R.Y,box=$('chart'),mode=state.chartMode||'growth';
+  document.querySelectorAll('[data-cm]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.cm===mode));
+  if(!R.put){$('legend').innerHTML='';box.innerHTML=`<div class="empty">Add an investment below and the growth chart will appear here.</div>`;return}
+  if(mode==='growth') return drawGrowth(R);
+  $('legend').innerHTML=R.active.map(s=>`<span><i class="sw" style="background:var(--s${SEGS.indexOf(s)+1})"></i>${s.name}</span>`).join('')
+    +`<span><i class="sw dash"></i>Amount invested</span><span><i class="sw dot"></i>Range at ±${state.spread}% return</span>`;
+  const W=920,H=380,L=64,Rm=18,T=14,B=46,pw=W-L-Rm,ph=H-T-B;
+  const max=niceMax(Math.max(R.high[Y],R.total[Y])),x=y=>L+pw*y/Y,yy=v=>T+ph*(1-v/max);
+  let g='';
+  for(let i=0;i<=4;i++){const v=max*i/4,py=yy(v);g+=`<line x1="${L}" x2="${W-Rm}" y1="${py}" y2="${py}" stroke="var(--line)" stroke-width="1"/><text x="${L-8}" y="${py+4}" text-anchor="end">${i?short(v):'0'}</text>`}
+  const every=Y>20?5:Y>12?2:1;
+  for(let y=0;y<=Y;y++) if(y%every===0||y===Y){ if(y!==Y&&Y-y<every&&every>1) continue;
+    g+=`<text x="${x(y)}" y="${H-B+18}" text-anchor="middle">${YEAR0+y}</text><text x="${x(y)}" y="${H-B+34}" text-anchor="middle" style="font-size:11px;opacity:.8">age ${state.age+y}</text>`}
+  const cum=Array(Y+1).fill(0);
+  R.active.forEach(s=>{
+    const lo=cum.slice(),v=R.seg[s.k];for(let y=0;y<=Y;y++)cum[y]+=v[y];
+    let d='M'+cum.map((c,y)=>`${x(y).toFixed(1)},${yy(c).toFixed(1)}`).join('L')+'L'+lo.map((c,y)=>`${x(y).toFixed(1)},${yy(c).toFixed(1)}`).reverse().join('L')+'Z';
+    g+=`<path d="${d}" fill="var(--s${SEGS.indexOf(s)+1})" stroke="var(--surface)" stroke-width="1.5" stroke-linejoin="round"/>`;
+  });
+  const line=a=>a.map((c,y)=>`${x(y).toFixed(1)},${yy(c).toFixed(1)}`).join(' ');
+  g+=`<polyline points="${line(R.high)}" fill="none" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="1.5 5" stroke-linecap="round"/>`;
+  g+=`<polyline points="${line(R.low)}" fill="none" stroke="var(--ink)" stroke-opacity=".55" stroke-width="1.5" stroke-dasharray="1.5 5" stroke-linecap="round"/>`;
+  g+=`<polyline points="${line(R.inv)}" fill="none" stroke="var(--ink)" stroke-width="2" stroke-dasharray="6 5"/>`;
+  g+=`<circle cx="${x(Y)}" cy="${yy(R.total[Y])}" r="5" fill="var(--chrome)" stroke="var(--ink)" stroke-width="2"/>`;
+  g+=`<line id="xh" x1="0" x2="0" y1="${T}" y2="${H-B}" stroke="var(--ink)" stroke-width="1" visibility="hidden"/>`;
+  box.innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Projected portfolio value by year, stacked by segment. The year-by-year table gives the same figures.">${g}</svg><div class="tip" id="tip" hidden></div>`;
+  const svg=box.firstChild,tip=$('tip'),xh=svg.querySelector('#xh');
+  const move=e=>{
+    const b=svg.getBoundingClientRect(),px=(e.clientX-b.left)/b.width*W,y=clamp(Math.round((px-L)/pw*Y),0,Y);
+    xh.setAttribute('x1',x(y));xh.setAttribute('x2',x(y));xh.setAttribute('visibility','visible');
+    tip.innerHTML=`<h4>${YEAR0+y} · age ${state.age+y}</h4>`+R.active.slice().reverse().map(s=>`<div class="r"><span><i class="sw" style="background:var(--s${SEGS.indexOf(s)+1})"></i>${s.name}</span><span class="num">${short(R.seg[s.k][y])}</span></div>`).join('')
+      +`<div class="r t"><span>Total value</span><span class="num">${short(R.total[y])}</span></div><div class="r"><span>Invested so far</span><span class="num">${short(R.inv[y])}</span></div>`+(R.paid>0?`<div class="r"><span>Coupons paid out so far</span><span class="num">${short(R.pay[y])}</span></div>`:'');
+    tip.hidden=false;placeTip(tip,x(y)/W);
+  };
+  svg.addEventListener('pointermove',move);svg.addEventListener('pointerdown',move);
+  svg.addEventListener('pointerleave',()=>{tip.hidden=true;xh.setAttribute('visibility','hidden')});
+}
+function placeTip(tip,fx){if(fx>.55){tip.style.left='auto';tip.style.right=((1-fx)*100+2)+'%'}else{tip.style.right='auto';tip.style.left=(fx*100+2)+'%'}}
+// Each year is one bar: the amount invested so far at the bottom, the growth on top.
+function drawGrowth(R){
+  const Y=R.Y,box=$('chart'),gr=y=>Math.max(0,R.total[y]-R.inv[y]);
+  $('legend').innerHTML=`<span><i class="sw" style="background:var(--inv)"></i>Amount invested <b class="num" style="color:var(--ink)">${short(R.inv[Y])}</b></span>`
+    +`<span><i class="sw" style="background:var(--green)"></i>Growth <b class="num up">${short(gr(Y))}</b></span>`
+    +`<span>Total in ${YEAR0+Y} <b class="num" style="color:var(--ink)">${short(R.total[Y])}</b></span>`;
+  const W=920,H=400,L=64,Rm=10,T=30,B=46,pw=W-L-Rm,ph=H-T-B,n=Y+1,slot=pw/n,bw=Math.min(slot*.64,56);
+  const max=niceMax(R.total[Y]),yy=v=>T+ph*(1-v/max),cx=y=>L+slot*(y+.5);
+  let g='';
+  for(let i=0;i<=4;i++){const v=max*i/4,py=yy(v);g+=`<line x1="${L}" x2="${W-Rm}" y1="${py}" y2="${py}" stroke="var(--line)" stroke-width="1"/><text x="${L-8}" y="${py+4}" text-anchor="end">${i?short(v):'0'}</text>`}
+  const every=Y>20?3:Y>12?2:1,lbl=y=>y===Y||y===0||(Y<=12)||(y%every===0&&Y-y>=every);
+  const top=(x,y0,w,h,r)=>{r=Math.min(r,h,w/2);return `M${x},${y0+h}V${y0+r}Q${x},${y0} ${x+r},${y0}H${x+w-r}Q${x+w},${y0} ${x+w},${y0+r}V${y0+h}Z`};
+  for(let y=0;y<=Y;y++){
+    const x=cx(y)-bw/2,iv=R.inv[y],tv=R.total[y],gv=gr(y),yi=yy(iv),yt=yy(tv),hb=yy(0)-yi,hg=yi-yt;
+    g+=`<g class="bar" data-y="${y}">`;
+    if(gv>0&&hg>0.5){
+      g+=hg>2?`<path d="${top(x,yt,bw,hg-2,4)}" fill="var(--green)"/>`:'';
+      g+=`<rect x="${x}" y="${yi}" width="${bw}" height="${Math.max(hb,0)}" fill="var(--inv)"/>`;
+    }else g+=`<path d="${top(x,yi,bw,Math.max(hb,0),4)}" fill="var(--inv)"/>`;
+    g+=`<rect x="${cx(y)-slot/2}" y="${T}" width="${slot}" height="${ph}" fill="transparent"/></g>`;
+    if(lbl(y)) g+=`<text x="${cx(y)}" y="${yt-7}" text-anchor="middle" style="font-weight:600;fill:var(--ink)">${short(tv)}</text>`;
+    if(lbl(y)) g+=`<text x="${cx(y)}" y="${H-B+18}" text-anchor="middle">${y?YEAR0+y:'Today'}</text><text x="${cx(y)}" y="${H-B+34}" text-anchor="middle" style="font-size:11px;opacity:.8">age ${state.age+y}</text>`;
+  }
+  // callouts on the last bar
+  const xl=cx(Y)+bw/2,yi=yy(R.inv[Y]),yt=yy(R.total[Y]),hg=yi-yt,hb=yy(0)-yi;
+  if(bw>=30){
+    const inside=(t,cy,col)=>`<text x="${cx(Y)}" y="${cy+4}" text-anchor="middle" style="font-weight:700;font-size:10.5px;fill:${col}">${t}</text>`;
+    if(hg>22) g+=inside('Growth',yt+hg/2,'#fff');
+    if(hb>22) g+=inside('Invested',yi+hb/2,'#fff');
+  }
+  box.innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Each year's value split into amount invested and growth. The year-by-year table gives the same figures.">${g}</svg><div class="tip" id="tip" hidden></div>`;
+  const svg=box.firstChild,tip=$('tip');
+  const show=y=>{const tv=R.total[y],iv=R.inv[y],gv=gr(y);
+    svg.querySelectorAll('.bar').forEach(b=>b.style.opacity=+b.dataset.y===y?1:.55);
+    tip.innerHTML=`<h4>${y?YEAR0+y:'Today'} · age ${state.age+y}</h4>
+      <div class="r"><span><i class="sw" style="background:var(--inv)"></i>Amount invested</span><span class="num">${short(iv)}</span></div>
+      <div class="r"><span><i class="sw" style="background:var(--green)"></i>Growth</span><span class="num up">${short(gv)}</span></div>
+      <div class="r t"><span>Total value</span><span class="num">${short(tv)}</span></div>
+      ${iv?`<div class="r"><span>Growth as % of invested</span><span class="num up">${Math.round(gv/iv*100)}%</span></div>`:''}
+      ${R.pay[y]>0?`<div class="r"><span>Coupons paid out so far</span><span class="num">${short(R.pay[y])}</span></div>`:''}`;
+    tip.hidden=false;placeTip(tip,cx(y)/W)};
+  const move=e=>{const b=svg.getBoundingClientRect(),px=(e.clientX-b.left)/b.width*W;show(clamp(Math.floor((px-L)/slot),0,Y))};
+  svg.addEventListener('pointermove',move);svg.addEventListener('pointerdown',move);
+  svg.addEventListener('pointerleave',()=>{tip.hidden=true;svg.querySelectorAll('.bar').forEach(b=>b.style.opacity=1)});
+}
+function drawAlloc(R){
+  const Y=R.Y;
+  if(!R.put){$('alloc').innerHTML=$('catmix').innerHTML=`<div class="empty">Nothing to show yet.</div>`;return}
+  const bar=(get,tot)=>`<div class="bar">${R.active.map(s=>`<i style="flex:0 0 calc(${(get(s)/tot*100).toFixed(2)}% - 2px);background:var(--s${SEGS.indexOf(s)+1})" title="${s.name}: ${(get(s)/tot*100).toFixed(0)}%"></i>`).join('')}</div>`;
+  $('alloc').innerHTML=`<div class="bar-lab" style="margin-top:0"><span>Amount invested</span><span class="num">${short(R.put)}</span></div>${bar(s=>R.segInv[s.k][Y],R.put)}
+   <div class="bar-lab"><span>Value in ${YEAR0+Y}</span><span class="num">${short(R.fv)}</span></div>${bar(s=>R.seg[s.k][Y],R.fv)}
+   <div class="scroll" style="margin-top:12px"><table><tr><th>Segment</th><th>Invested</th><th>Value in ${YEAR0+Y}</th><th>Share then</th></tr>${R.active.map(s=>`<tr><td><span class="name-cell"><i class="sw" style="background:var(--s${SEGS.indexOf(s)+1})"></i>${s.name}</span></td><td>${short(R.segInv[s.k][Y])}</td><td>${short(R.seg[s.k][Y])}</td><td>${(R.seg[s.k][Y]/R.fv*100).toFixed(0)}%</td></tr>`).join('')}</table></div>`;
+  const cats=Object.entries(R.cat).filter(e=>e[1]>0).sort((a,b)=>b[1]-a[1]);
+  $('catmix').innerHTML=`<div class="bar-lab" style="margin-top:0"><span>Money invested by category</span><span class="num">${cats.length} categor${cats.length===1?'y':'ies'}</span></div>
+   <div class="scroll"><table><tr><th>Category</th><th>Invested</th><th>Share</th></tr>${cats.map(([k,v])=>{const [sk,c]=k.split('|'),si=SEGS.findIndex(x=>x.k===sk);
+     return `<tr><td><span class="name-cell"><i class="sw" style="background:var(--s${si+1})"></i>${esc(c)}</span></td><td>${short(v)}</td><td>${(v/R.put*100).toFixed(0)}%</td></tr>`}).join('')}</table></div>`;
+}
+function pieSlices(rows,tot){let a=-Math.PI/2;return rows.filter(r=>r.inv>0).map(r=>{const sw=r.inv/tot*Math.PI*2,o={r,a0:a,a1:a+sw};a+=sw;return o})}
+function drawSummary(){
+  const S=summary(),{H,Y}=S;
+  $('sum-sub').textContent=`Built from everything above. Values after ${H.join(', ')} years.`;
+  if(!S.tot.inv){$('pie').innerHTML='';$('sumtable').innerHTML=`<div class="empty">Add an investment to see the summary.</div>`;$('sum-note').textContent='';return}
+  const C=150,Rr=140,sl=pieSlices(S.rows,S.tot.inv);
+  const arc=o=>{if(o.a1-o.a0>=Math.PI*2-1e-6)return `<circle cx="${C}" cy="${C}" r="${Rr}" fill="var(--s${SEGS.indexOf(o.r.s)+1})"/>`;
+    const p=(a)=>`${(C+Rr*Math.cos(a)).toFixed(2)},${(C+Rr*Math.sin(a)).toFixed(2)}`;
+    return `<path d="M${C},${C}L${p(o.a0)}A${Rr},${Rr} 0 ${o.a1-o.a0>Math.PI?1:0} 1 ${p(o.a1)}Z" fill="var(--s${SEGS.indexOf(o.r.s)+1})" stroke="var(--surface)" stroke-width="2.5" stroke-linejoin="round"><title>${o.r.s.name}: ${o.r.pct.toFixed(1)}%</title></path>`};
+  const lab=o=>{if(o.r.pct<5)return '';const m=(o.a0+o.a1)/2,x=C+Rr*.62*Math.cos(m),y=C+Rr*.62*Math.sin(m);
+    return `<text x="${x.toFixed(1)}" y="${(y+5).toFixed(1)}" text-anchor="middle" style="font:600 14px var(--body);fill:#fff;paint-order:stroke;stroke:rgba(0,0,0,.35);stroke-width:2.5px">${Math.round(o.r.pct)}%</text>`};
+  $('pie').innerHTML=`<svg viewBox="0 0 300 300" role="img" aria-label="Allocation of money invested by segment. The table beside it gives the same figures.">${sl.map(arc).join('')}${sl.map(lab).join('')}</svg>`;
+  const hd=H.map(h=>`<th>After ${h} yrs${h>Y?'*':''}<br><span style="font-weight:400">${YEAR0+h}</span></th>`).join('');
+  $('sumtable').innerHTML=`<table><tr><th>Investment category</th><th>Amount invested</th><th>Allocation</th><th>Assumed return</th>${hd}</tr>
+   ${S.rows.map(r=>`<tr><td><span class="name-cell"><i class="sw" style="background:var(--s${SEGS.indexOf(r.s)+1})"></i>${r.s.name}</span></td><td>${short(r.inv)}</td><td>${r.pct.toFixed(1)}%</td><td style="color:var(--gold);font-weight:600">${r.ret.toFixed(1)}%</td>${r.vals.map(v=>`<td class="g">${short(v)}</td>`).join('')}</tr>`).join('')}
+   <tr class="tot"><td>Total</td><td>${short(S.tot.inv)}</td><td>100%</td><td>${S.tot.ret.toFixed(1)}%</td>${S.tot.vals.map(v=>`<td class="g">${short(v)}</td>`).join('')}</tr></table>`;
+  $('sum-note').textContent=`Amount invested is the total put in over the ${Y}-year plan, including every SIP instalment. Assumed return is the average of the expected returns entered, weighted by amount.`
+    +(S.beyond?` * Beyond the ${Y}-year plan: assumes every investment and SIP carries on as entered.`:'')
+    +(S.RX.pay[Math.max(...H)]>0?' Bond coupons paid out are not included in these values.':'');
+}
+// Tax if everything is sold at the end of the plan: rate x (value - amount invested), per segment.
+// The yearly exemption is shared across categories in proportion to their gains.
+// Exit tax. Bond interest is taxed at the client's slab rate; everything else is long-term capital gains after the yearly exemption,
+// which is shared across categories in proportion to their capital gains.
+const bondInterest=Y=>state.holdings.filter(h=>isBond(h)&&filled(h)&&h.coupon!=='payout').reduce((a,h)=>a+(+h.amount||0)*(+h.ret||0)/100,0)*Y;
+function exitTax(R){const t=(+state.tax||0)/100,sl=(+(state.slab??30)||0)/100,Y=R.Y,E=Math.max(0,+(state.exempt??125000)||0);
+  const raw=R.active.map(s=>{const inv=R.segInv[s.k][Y],val=R.seg[s.k][Y],gain=val-inv,si=s.k==='bond'?Math.max(0,Math.min(gain,bondInterest(Y))):0;return {s,inv,val,gain,slabI:si,cg:gain-si}});
+  const P=raw.reduce((a,r)=>a+Math.max(0,r.cg),0),f=P>0?Math.max(0,1-E/P):0;
+  const rows=raw.map(r=>Object.assign(r,{taxable:Math.max(0,r.cg)*f,tax:Math.max(0,r.cg)*f*t+r.slabI*sl}));
+  const sum=k=>rows.reduce((a,r)=>a+r[k],0),gain=R.fv-R.put,tax=sum('tax');
+  const coup=R.paid,coupTax=coup*sl;
+  return {rows,inv:R.put,val:R.fv,gain,exempt:Math.min(E,P),slabI:sum('slabI'),taxable:sum('taxable'),tax,net:R.fv-tax,rate:+state.tax||0,slab:+(state.slab??30)||0,E,coup,coupTax}}
+function drawTax(R){
+  const T=exitTax(R),end=YEAR0+R.Y;
+  $('tax-sub').textContent=`If everything is sold in ${end}, at the end of the plan. ${short(T.exempt)} of the capital gain is exempt.`;
+  if(!R.put){$('taxtable').innerHTML='<div class="empty">Add an investment to see the tax.</div>';return}
+  $('taxtable').innerHTML=`<table><tr><th>Investment category</th><th>Amount invested</th><th>Value in ${end}</th><th>Gain</th><th>Bond interest at ${T.slab}% slab</th><th>Capital gain taxable after exemption</th><th>Tax</th><th>In hand after tax</th></tr>
+   ${T.rows.map(r=>`<tr><td><span class="name-cell"><i class="sw" style="background:var(--s${SEGS.indexOf(r.s)+1})"></i>${r.s.name}</span></td><td>${short(r.inv)}</td><td>${short(r.val)}</td><td class="g">${short(r.gain)}</td><td>${r.slabI?short(r.slabI):'–'}</td><td>${short(r.taxable)}</td><td class="tx">${short(r.tax)}</td><td><b>${short(r.val-r.tax)}</b></td></tr>`).join('')}
+   <tr class="tot"><td>Total</td><td>${short(T.inv)}</td><td>${short(T.val)}</td><td class="g">${short(T.gain)}</td><td>${T.slabI?short(T.slabI):'–'}</td><td>${short(T.taxable)}</td><td class="tx">${short(T.tax)}</td><td>${short(T.net)}</td></tr>
+   ${T.coup>0?`<tr><td colspan="3">Bond coupons paid out over the plan</td><td class="g">${short(T.coup)}</td><td>${short(T.coup)}</td><td>–</td><td class="tx">${short(T.coupTax)}</td><td><b>${short(T.coup-T.coupTax)}</b></td></tr>`:''}</table>`;
+}
+function drawTable(R){
+  const P=R.paid>0;
+  let h=`<tr><th>Year</th><th>Age</th><th>Invested so far</th>${R.active.map(s=>`<th>${s.name}</th>`).join('')}<th>Total value</th><th>Gain</th>${P?'<th>Coupons paid out</th>':''}</tr>`;
+  for(let y=1;y<=R.Y;y++) h+=`<tr${y===R.Y?' class="tot"':''}><td>${YEAR0+y}</td><td>${state.age+y}</td><td>${short(R.inv[y])}</td>${R.active.map(s=>`<td>${short(R.seg[s.k][y])}</td>`).join('')}<td><b>${short(R.total[y])}</b></td><td class="g">${short(R.total[y]-R.inv[y])}</td>${P?`<td>${short(R.pay[y])}</td>`:''}</tr>`;
+  const T=exitTax(R),ncol=6+R.active.length+(P?1:0);
+  if(R.put&&TAX) h+=`<tr class="taxrow"><td colspan="${ncol}">If fully exited in ${YEAR0+R.Y}: gain <b class="up">${short(T.gain)}</b>, ${short(T.exempt)} exempt, tax <b class="tx">${short(T.tax)}</b>, in hand after tax <b>${short(T.net)}</b></td></tr>`;
+  $('ytable').innerHTML=h;
+}
+
+/* ---------- events ---------- */
+function intNum(el,a,b,d){const v=parseInt(el.value,10);return isNaN(v)?d:clamp(v,a,b)}
+$('segments').addEventListener('input',e=>{
+  const row=e.target.closest('.row');if(!row)return;
+  const h=state.holdings.find(x=>x.id===row.dataset.id),f=e.target.dataset.f;if(!h||!f)return;
+  if(f==='name'){h.name=e.target.value;syncSipButtons()}
+  else if(f==='amount'){const v=parseAmt(e.target.value);h.amount=isNaN(v)?0:v}
+  else if(f==='cat'){h.cat=e.target.value}
+  else if(f==='mode'){h.mode=e.target.value;renderSegments()}
+  else if(f==='coupon'){h.coupon=e.target.value}
+  else if(f==='mat'){h.mat=clamp(parseInt(e.target.value,10)||1,1,40)}
+  else h[f]=clamp(parseFloat(e.target.value)||0,0,f==='ret'?60:50);
+  refresh();
+});
+$('segments').addEventListener('focusout',e=>{
+  if(e.target.dataset.f!=='amount')return;
+  const h=state.holdings.find(x=>x.id===e.target.closest('.row').dataset.id);
+  if(h) e.target.value=h.amount?nf.format(Math.round(h.amount)):'';
+});
+$('segments').addEventListener('click',e=>{
+  const a=e.target.closest('[data-add]'),d=e.target.closest('[data-del]');
+  const ts=e.target.closest('[data-tosip]'),ca=e.target.closest('[data-copyall]');
+  if(ts){const h=state.holdings.find(x=>x.id===ts.dataset.tosip);if(h&&!sipKey(h)){toast('Enter the fund name first, then add it as a SIP.');$(h.id+'-name').focus();return}if(h)toSip([h]);return}
+  if(ca){toSip(copyable());return}
+  if(a){const h=newHolding(a.dataset.add);state.holdings.push(h);renderSegments();refresh();$(h.id+'-name').focus()}
+  if(d){state.holdings=state.holdings.filter(h=>h.id!==d.dataset.del);renderSegments();refresh()}
+});
+$('c-name').addEventListener('input',e=>{state.name=e.target.value;refresh()});
+$('c-by').addEventListener('input',e=>{state.by=e.target.value;persist()});
+$('c-age').addEventListener('input',e=>{state.age=intNum(e.target,1,100,state.age);refresh()});
+const setYears=v=>{state.years=v;$('c-years').value=v;$('c-years-r').value=v;refresh()};
+$('c-years-r').addEventListener('input',e=>setYears(+e.target.value));
+$('c-years').addEventListener('change',e=>setYears(intNum(e.target,1,30,state.years)));
+$('a-infl').addEventListener('input',e=>{state.infl=clamp(parseFloat(e.target.value)||0,0,15);refresh()});
+document.querySelectorAll('[data-cm]').forEach(b=>b.addEventListener('click',()=>{state.chartMode=b.dataset.cm;drawChart(compute());persist()}));
+$('a-tax').addEventListener('input',e=>{state.tax=clamp(parseFloat(e.target.value)||0,0,40);refresh()});
+$('a-slab').addEventListener('input',e=>{state.slab=clamp(parseFloat(e.target.value)||0,0,45);refresh()});
+$('a-ex').addEventListener('input',e=>{const v=parseAmt(e.target.value||'0');state.exempt=isNaN(v)?0:v;refresh()});
+$('a-ex').addEventListener('blur',e=>{e.target.value=nf.format(Math.round(state.exempt||0))});
+$('a-spread').addEventListener('input',e=>{state.spread=clamp(parseFloat(e.target.value)||0,0,10);refresh()});
+
+// intake
+function chipSync(){const v=$('in-years').value;document.querySelectorAll('#yr-chips .chip').forEach(c=>c.setAttribute('aria-pressed',c.dataset.y===v));$('in-yrs-word').textContent=(v||'10')+' years'}
+$('yr-chips').addEventListener('click',e=>{const c=e.target.closest('.chip');if(c){$('in-years').value=c.dataset.y;chipSync()}});
+$('in-years').addEventListener('input',chipSync);chipSync();
+function begin(withSample){
+  const name=$('in-name').value.trim(),age=parseInt($('in-age').value,10);
+  $('in-name-err').textContent=name?'':'Enter the client\'s name.';
+  $('in-age-err').textContent=age>0&&age<=100?'':'Enter an age between 1 and 100.';
+  if(!name){$('in-name').focus();return} if(!(age>0&&age<=100)){$('in-age').focus();return}
+  state=blank();state.name=name;state.age=age;state.years=intNum($('in-years'),1,30,10);state.by=$('in-by').value.trim();state.started=true;
+  if(withSample) sample();
+  show();window.scrollTo(0,0);
+}
+$('intake-form').addEventListener('submit',e=>{e.preventDefault();begin(false)});
+$('btn-sample').addEventListener('click',()=>begin(true));
+let armed=0;
+$('btn-new').addEventListener('click',e=>{
+  if(Date.now()-armed<4000){state=blank();persist();$('intake-form').reset();$('in-years').value=10;chipSync();e.target.textContent='New client';armed=0;show();window.scrollTo(0,0)}
+  else{armed=Date.now();e.target.textContent='Click again to clear this plan';setTimeout(()=>{if(armed){e.target.textContent='New client';armed=0}},4000)}
+});
+
+/* ---------- saving files ---------- */
+let toastT;function toast(m){const t=$('toast');t.textContent=m;t.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>t.hidden=true,4500)}
+async function saveFile(filename,data){
+  try{
+    if(window.claude&&typeof window.claude.use==='function'){
+      const d=await window.claude.use('downloads');
+      if(!d){toast('Saving files is not available in this view. Open this page on claude.ai and try again.');return}
+      await d.save({filename,data});toast(filename+' saved.');
+    }else{
+      const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data]));a.download=filename;document.body.appendChild(a);a.click();a.remove();
+    }
+  }catch(err){
+    if(err&&err.code==='declined')return;
+    toast(err&&err.code==='rate_limited'?'A save is already in progress. Try again in a moment.':'The file could not be saved here. Open this page on claude.ai and try again.');
+  }
+}
+const fileBase=()=>(state.name.trim()||'Client').replace(/[^\w\- ]+/g,'').trim().replace(/\s+/g,'_')+'_Wealth_Projection_'+state.years+'Y';
+const today=()=>new Date().toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'});
+
+function buildXlsx(){
+  if(!window.XLSX){toast('The Excel library did not load. Check the internet connection and reload.');return}
+  const X=window.XLSX,R=compute(),Y=R.Y,SP=state.spread,HX=Math.max(10,Y),Z='#,##0',wb=X.utils.book_new(),col=X.utils.encode_col;
+  // Inputs live on the Summary sheet; every other sheet refers to them.
+  const S_AGE='Summary!$B$4',S_Y='Summary!$B$5',S_Y0='Summary!$B$6',S_SP='Summary!$B$11',S_IN='Summary!$B$12',S_FB='Summary!$B$13';
+  const num=(v,f,z=Z)=>{const c={t:'n',v:isFinite(v)?Math.round(v*100)/100:0,z};if(f)c.f=f;return c};
+  const pc=(v,f)=>num(v,f,'0.0');
+  const txt=v=>({t:'s',v:String(v??'')});
+  const ref=n=>`'${n}'!`;
+  const SPARE=3,HR=4,FR=5,info={},sheets={};
+  const rng=(i,c)=>`${ref(i.name)}$${c}$${i.first}:$${c}$${i.last}`;
+
+  /* ---- one sheet per segment (lumpsum / SIP style) ---- */
+  const lumpF=(r,rate,K)=>`D${r}*(1+(${rate})/100)^(${K})`;
+  const sipF=(r,rate,K)=>{const i=`((${rate})/1200)`,q=`(1+${i})^12`,g=`(1+E${r}/100)`;
+    return `D${r}*IF(${i}=0,12,((1+${i})^12-1)/${i}*(1+${i}))*IF(ABS(${q}-${g})<1E-12,(${K})*(${q})^((${K})-1),((${q})^(${K})-${g}^(${K}))/(${q}-${g}))`};
+  const valF=(r,rate,K)=>`IF(C${r}="Monthly SIP",${sipF(r,rate,K)},${lumpF(r,rate,K)})`;
+  function segSheet(s){
+    const hs=state.holdings.filter(h=>h.seg===s.k),Y0C=13;
+    const head=['Name',catLabel(s.k),'Type (Lumpsum or Monthly SIP)',s.mode==='sip'?'Amount per month (₹)':'Amount (₹)','SIP step-up (% a year)','Expected return (% p.a.)','Total invested over plan (₹)','Value at end of plan (₹)','Value if returns are lower (₹)','Value if returns are higher (₹)','Value after 5 years (₹)','Value after 7 years (₹)','Value after 10 years (₹)'];
+    const aoa=[[txt(`${s.name}: investments and projections`)],[txt('Edit name, category, type, amount, step-up and expected return. All other columns are formulas. Empty rows at the bottom are for new investments.')],[],
+      [...head.map(txt),...Array.from({length:Y},(_,j)=>({t:'n',v:j+1,z:'"Value after year "0'}))]];
+    const n=hs.length+SPARE,first=FR,last=FR+n-1,tot=last+1,sum=Array(Y0C+Y).fill(0);let rw=0;
+    for(let i=0;i<n;i++){
+      const r=FR+i,h=hs[i],a=h?series(h,Y):null,lo=h?series(h,Y,-SP):null,hi=h?series(h,Y,SP):null,a10=h?series(h,HX):null,g=(o,k)=>o?o.val[k]:0;
+      const vals=[a?a.inv[Y]:0,g(a,Y),g(lo,Y),g(hi,Y),g(a10,5),g(a10,7),g(a10,10)];
+      const row=[txt(h?h.name:''),txt(h?(h.cat||CAT_DEF[s.k]):''),txt((h?h.mode:s.mode)==='sip'?'Monthly SIP':'Lumpsum'),num(h?+h.amount||0:0),pc(h?(h.mode==='sip'?+h.step||0:0):0),pc(h?+h.ret||0:s.ret),
+        num(vals[0],`IF(C${r}="Monthly SIP",D${r}*12*IF(E${r}=0,${S_Y},((1+E${r}/100)^${S_Y}-1)/(E${r}/100)),D${r})`),
+        num(vals[1],valF(r,`F${r}`,S_Y)),num(vals[2],valF(r,`MAX(0,F${r}-${S_SP})`,S_Y)),num(vals[3],valF(r,`F${r}+${S_SP}`,S_Y)),
+        num(vals[4],valF(r,`F${r}`,5)),num(vals[5],valF(r,`F${r}`,7)),num(vals[6],valF(r,`F${r}`,10))];
+      vals.forEach((v,j)=>sum[6+j]+=v);
+      for(let k=1;k<=Y;k++){const v=g(a,k);sum[Y0C+k-1]+=v;row.push(num(v,valF(r,`F${r}`,`${col(Y0C+k-1)}$${HR}`)))}
+      rw+=(a?a.inv[Y]:0)*(h?+h.ret||0:0);aoa.push(row);
+    }
+    const tr=[txt('Total'),txt(''),txt(''),txt(''),txt(''),pc(sum[6]?rw/sum[6]:0,`IF(G${tot}=0,0,SUMPRODUCT(G${first}:G${last},F${first}:F${last})/G${tot})`)];
+    for(let c=6;c<Y0C+Y;c++){const L=col(c);tr.push(num(sum[c],`SUM(${L}${first}:${L}${last})`))}
+    aoa.push(tr);
+    info[s.k]={name:s.name,first,last,tot,inv:'G',ret:'F',end:'H',lo:'I',hi:'J',y5:'K',y7:'L',y10:'M',yc:k=>col(Y0C+k-1),lump:true};
+    const ws=X.utils.aoa_to_sheet(aoa);ws['!cols']=[{wch:34},{wch:30},{wch:16},{wch:16},{wch:12},{wch:14},{wch:18},{wch:18},{wch:18},{wch:18},{wch:18},{wch:18},{wch:18},...Array(Y).fill({wch:17})];
+    sheets[s.k]=ws;
+  }
+  SEGS.filter(s=>!s.bond).forEach(segSheet);
+
+  /* ---- bonds sheet ---- */
+  (function(){
+    const s=SEGS.find(x=>x.bond),hs=state.holdings.filter(isBond),Y0C=16,mf=info.mf,sp=info.sip;
+    const nF=`(COUNTIF(${rng(mf,'D')},">0")+COUNTIF(${rng(sp,'D')},">0"))`;
+    const part=(i,op,K)=>`SUMPRODUCT((${rng(i,'D')}>0)*(((1+(${rng(i,'F')}${op})/100+1E-12)^(${K})-1)/((${rng(i,'F')}${op})/100+1E-12)))`;
+    const fb=(op,K)=>`(((1+(${S_FB}${op})/100)^(${K})-1)/((${S_FB}${op})/100+1E-12))`;
+    const bondF=(r,op,K)=>`IF(C${r}="Pay out",D${r},D${r}+H${r}*IF(${nF}=0,${fb(op,K)},(${part(mf,op,K)}+${part(sp,op,K)})/${nF}))`;
+    const head=['Name','Bond type','Coupon (Reinvest in MFs or Pay out)','Amount (₹)','Maturity (years)','Matures in','Yield (% p.a.)','Coupon per year (₹)','Amount invested (₹)','Value at end of plan (₹)','Coupons paid out over plan (₹)','Value if returns are lower (₹)','Value if returns are higher (₹)','Value after 5 years (₹)','Value after 7 years (₹)','Value after 10 years (₹)'];
+    const aoa=[[txt('Bonds: investments and projections')],[txt('Coupons are paid yearly at the yield. Reinvested coupons are split equally across the mutual funds and SIPs with an amount, at each fund\'s expected return. On maturity the amount is assumed to go into a similar bond at the same yield until the end of the plan.')],[],
+      [...head.map(txt),...Array.from({length:Y},(_,j)=>({t:'n',v:j+1,z:'"Value after year "0'}))]];
+    const n=hs.length+SPARE,first=FR,last=FR+n-1,tot=last+1,sum=Array(Y0C+Y).fill(0);let rw=0;
+    for(let i=0;i<n;i++){
+      const r=FR+i,h=hs[i],a=h?series(h,Y):null,lo=h?series(h,Y,-SP):null,hi=h?series(h,Y,SP):null,a10=h?series(h,HX):null,g=(o,k)=>o?o.val[k]:0;
+      const A=h?+h.amount||0:0,yl=h?+h.ret||0:s.ret,mt=h?+h.mat||5:5,c=A*yl/100;
+      const vals=[c,A,g(a,Y),a?a.pay[Y]:0,g(lo,Y),g(hi,Y),g(a10,5),g(a10,7),g(a10,10)];
+      const row=[txt(h?h.name:''),txt(h?(h.cat||CAT_DEF.bond):''),txt(h&&h.coupon==='payout'?'Pay out':'Reinvest in MFs'),num(A),num(mt,null,'0'),num(YEAR0+mt,`${S_Y0}+E${r}`,'0'),pc(yl),
+        num(vals[0],`D${r}*G${r}/100`),num(vals[1],`D${r}`),num(vals[2],bondF(r,'',S_Y)),num(vals[3],`IF(C${r}="Pay out",H${r}*${S_Y},0)`),
+        num(vals[4],bondF(r,`-${S_SP}`,S_Y)),num(vals[5],bondF(r,`+${S_SP}`,S_Y)),num(vals[6],bondF(r,'',5)),num(vals[7],bondF(r,'',7)),num(vals[8],bondF(r,'',10))];
+      vals.forEach((v,j)=>sum[7+j]+=v);
+      for(let k=1;k<=Y;k++){const v=g(a,k);sum[Y0C+k-1]+=v;row.push(num(v,bondF(r,'',`${col(Y0C+k-1)}$${HR}`)))}
+      rw+=A*yl;aoa.push(row);
+    }
+    const tr=[txt('Total'),txt(''),txt(''),num(sum[8],`SUM(D${first}:D${last})`),txt(''),txt(''),pc(sum[8]?rw/sum[8]:0,`IF(I${tot}=0,0,SUMPRODUCT(I${first}:I${last},G${first}:G${last})/I${tot})`)];
+    for(let c=7;c<Y0C+Y;c++){const L=col(c);tr.push(num(sum[c],`SUM(${L}${first}:${L}${last})`))}
+    aoa.push(tr);
+    info.bond={name:s.name,first,last,tot,inv:'I',ret:'G',end:'J',lo:'L',hi:'M',y5:'N',y7:'O',y10:'P',yc:k=>col(Y0C+k-1),paid:'K'};
+    const ws=X.utils.aoa_to_sheet(aoa);ws['!cols']=[{wch:30},{wch:28},{wch:20},{wch:16},{wch:10},{wch:10},{wch:10},{wch:16},{wch:18},{wch:18},{wch:18},{wch:18},{wch:18},{wch:18},{wch:18},{wch:18},...Array(Y).fill({wch:17})];
+    sheets.bond=ws;
+  })();
+
+  const T=(k,c)=>`${ref(info[k].name)}${info[k][c]}${info[k].tot}`;
+  const segK=SEGS.map(s=>s.k),lumpK=segK.filter(k=>info[k].lump);
+  const sumOf=c=>segK.map(k=>T(k,c)).join('+');
+
+  /* ---- Summary (inputs + results) ---- */
+  const lumpToday=lumpK.map(k=>`SUMIF(${rng(info[k],'C')},"<>Monthly SIP",${rng(info[k],'D')})`).join('+')+`+SUM(${rng(info.bond,'D')})`;
+  const sipToday=lumpK.map(k=>`SUMIF(${rng(info[k],'C')},"Monthly SIP",${rng(info[k],'D')})`).join('+');
+  const s1=[[txt('Wealth projection')],[txt('Inputs: change the values in column B. Every result in this workbook is a formula.')],
+    [txt('Client'),txt(state.name)],[txt('Age today'),num(state.age,null,'0')],[txt('Time frame (years)'),num(Y,null,'0')],[txt('Start year'),num(YEAR0,null,'0')],
+    [txt('Projection to'),num(YEAR0+Y,`B6+B5`,'0')],[txt('Age at end of plan'),num(state.age+Y,`B4+B5`,'0')],[txt('Prepared by'),txt(state.by||'')],[txt('Date'),txt(today())],
+    [txt('Return range for scenarios (± % p.a.)'),pc(SP)],[txt('Inflation (% p.a.)'),pc(state.infl)],[txt('Return for reinvested bond coupons when no mutual funds are listed (% p.a.)'),pc(MF_FALLBACK)],[],
+    [txt('Results')],
+    [txt('Lumpsum invested today (₹)'),num(R.lump,lumpToday)],
+    [txt('Monthly SIP, starting amount (₹)'),num(R.sip,sipToday)],
+    [txt('Total invested over the plan (₹)'),num(R.put,sumOf('inv'))],
+    [txt('Projected value at end of plan (₹)'),num(R.fv,sumOf('end'))],
+    [txt('Expected gain (₹)'),num(R.gain,'B19-B18')],
+    [txt('Weighted expected return (% p.a.)'),pc(R.wret,`IF(B18=0,0,(${segK.map(k=>`${T(k,'ret')}*${T(k,'inv')}`).join('+')})/B18)`)],
+    [txt('Value if returns are lower by the range (₹)'),num(R.low[Y],sumOf('lo'))],
+    [txt('Value if returns are higher by the range (₹)'),num(R.high[Y],sumOf('hi'))],
+    [txt("Value at end of plan in today's money (₹)"),num(R.fv/Math.pow(1+state.infl/100,Y),'B19/(1+B12/100)^B5')],
+    [txt('Bond coupons paid out over the plan (₹)'),num(R.paid,T('bond','paid'))],
+    ...(TAX?[[txt('Long-term capital gains tax on complete exit (% of gain)'),pc(+state.tax||0)],
+    [txt('Gain if fully exited at end of plan (₹)'),num(R.fv-R.put,'B19-B18')],
+    [txt('Tax on complete exit (₹)'),num(exitTax(R).tax,`'Portfolio summary'!${col(([5,7,10].includes(Y)?7:8)+3)}${5+SEGS.length}`)],
+    [txt('In hand after tax (₹)'),num(exitTax(R).net,'B19-B28')],
+    [txt('Yearly exemption on gains (₹)'),num(exitTax(R).E)],
+    [txt('Income slab rate for bond interest (%)'),pc(+(state.slab??30)||0)],
+    [txt('Tax on bond coupons paid out (₹)'),num(exitTax(R).coupTax,'B25*B31/100')]]:[]),[],
+    [txt(`The year-by-year columns and the Year by year sheet cover the ${Y} years set when this file was made. Changing the time frame above updates every end-of-plan figure.`)],
+    [txt('Illustration only. Projections apply the expected returns entered and are not a guarantee or forecast. Investments are subject to market risks. Figures are before taxes, fees and exit loads.')]];
+  const wsS=X.utils.aoa_to_sheet(s1);wsS['!cols']=[{wch:62},{wch:24}];
+
+  /* ---- Portfolio summary ---- */
+  const S=summary(),extra=![5,7,10].includes(Y);
+  const ps=[[txt('Portfolio summary')],[txt('Every figure is a formula linked to the segment sheets.')],[],
+    [txt('Investment category'),txt('Amount invested over plan (₹)'),txt('Allocation'),txt('Assumed return (% p.a.)'),...[5,7,10].map(h=>txt(`Value after ${h} years, ${YEAR0+h} (₹)${h>Y?' *':''}`)),...(extra?[txt(`Value at end of plan, ${YEAR0+Y} (₹)`)]:[])]];
+  const pf=5,pl=pf+segK.length-1,pt=pl+1,R10=compute(HX);
+  SEGS.forEach((s,i)=>{const r=pf+i,inv=R.segInv[s.k][Y];
+    ps.push([txt(s.name),num(inv,T(s.k,'inv')),num(R.put?inv/R.put:0,`IF($B$${pt}=0,0,B${r}/$B$${pt})`,'0.0%'),pc(R.segRet[s.k]||0,T(s.k,'ret')),
+      num(R10.seg[s.k][5],T(s.k,'y5')),num(R10.seg[s.k][7],T(s.k,'y7')),num(R10.seg[s.k][10],T(s.k,'y10')),...(extra?[num(R.seg[s.k][Y],T(s.k,'end'))]:[])])});
+  ps.push([txt('Total'),num(R.put,`SUM(B${pf}:B${pl})`),num(R.put?1:0,`SUM(C${pf}:C${pl})`,'0.0%'),pc(R.wret,`IF(B${pt}=0,0,SUMPRODUCT(B${pf}:B${pl},D${pf}:D${pl})/B${pt})`),
+    ...['E','F','G',...(extra?['H']:[])].map((L,j)=>num([R10.total[5],R10.total[7],R10.total[10],R.total[Y]][j],`SUM(${L}${pf}:${L}${pl})`))]);
+  // tax on complete exit, per category (rate from Summary!B26)
+  const tc0=extra?8:7,TX=exitTax(R);
+  // exemption (Summary!B30) is shared across categories in proportion to their gains
+  if(TAX){const g_=`$${col(tc0)}$${pf}:$${col(tc0)}$${pl}`,s_=`$${col(tc0+1)}$${pf}:$${col(tc0+1)}$${pl}`;
+  const CGP=`SUMPRODUCT((${g_}-${s_}>0)*(${g_}-${s_}))`,PF=`IF(${CGP}=0,0,MAX(0,1-Summary!$B$30/${CGP}))`;
+  const bInt=`SUMIF(${rng(info.bond,'C')},"Reinvest in MFs",${rng(info.bond,'H')})*${S_Y}`;
+  ps[3].push(txt(`Gain at end of plan (₹)`),txt('Bond interest taxed at slab (₹)'),txt('Capital gain taxable after exemption (₹)'),txt('Tax on complete exit (₹)'),txt('In hand after tax (₹)'));
+  SEGS.forEach((s,i)=>{const r=pf+i,row=TX.rows.find(x=>x.s===s)||{gain:R.seg[s.k][Y]-R.segInv[s.k][Y],slabI:0,taxable:0,tax:0};
+    ps[4+i].push(num(row.gain,`${T(s.k,'end')}-B${r}`),num(row.slabI,s.k==='bond'?`MAX(0,MIN(${col(tc0)}${r},${bInt}))`:null),
+      num(row.taxable,`MAX(0,${col(tc0)}${r}-${col(tc0+1)}${r})*${PF}`),num(row.tax,`${col(tc0+2)}${r}*Summary!$B$26/100+${col(tc0+1)}${r}*Summary!$B$31/100`),num(R.seg[s.k][Y]-row.tax,`${T(s.k,'end')}-${col(tc0+3)}${r}`))});
+  ps[4+SEGS.length].push(...[0,1,2,3,4].map(j=>num([TX.gain,TX.slabI,TX.taxable,TX.tax,TX.net][j],`SUM(${col(tc0+j)}${pf}:${col(tc0+j)}${pl})`)));}
+  ps.push([],[txt('Amount invested includes every SIP instalment over the plan. Assumed return is weighted by amount.'+(Y<10?` * Beyond the ${Y}-year plan: assumes every investment and SIP carries on as entered.`:'')+' Bond coupons paid out are not included in these values.')]);
+  if(TAX) ps.push([txt('Tax: '+TAXNOTE_PDF.replace(/Rs /g,'₹'))]);
+  const wsP=X.utils.aoa_to_sheet(ps);wsP['!cols']=[{wch:22},{wch:24},{wch:12},{wch:20},{wch:26},{wch:26},{wch:26},{wch:26},{wch:22},{wch:24},{wch:26},{wch:22},{wch:22}];
+
+  /* ---- Year by year ---- */
+  const invK=(r)=>lumpK.map(k=>{const i=info[k];return `SUMIF(${rng(i,'C')},"<>Monthly SIP",${rng(i,'D')})+SUMPRODUCT((${rng(i,'C')}="Monthly SIP")*${rng(i,'D')}*12*(((1+${rng(i,'E')}/100+1E-9)^A${r}-1)/(${rng(i,'E')}/100+1E-9)))`}).join('+')+`+SUM(${rng(info.bond,'D')})`;
+  const yy=[[txt('Year by year')],[txt('Value at the end of each year. Every figure is a formula linked to the segment sheets.')],[],
+    [txt('Years from today'),txt('Year'),txt('Age'),txt('Invested so far (₹)'),...SEGS.map(s=>txt(s.name+' (₹)')),txt('Total value (₹)'),txt('Gain (₹)'),txt('Bond coupons paid out to date (₹)')]];
+  const sc=4,tc=sc+SEGS.length;
+  for(let k=1;k<=Y;k++){const r=HR+k;
+    yy.push([num(k,null,'0'),num(YEAR0+k,`${S_Y0}+A${r}`,'0'),num(state.age+k,`${S_AGE}+A${r}`,'0'),num(R.inv[k],invK(r)),
+      ...SEGS.map(s=>num(R.seg[s.k][k],`${ref(s.name)}${info[s.k].yc(k)}${info[s.k].tot}`)),
+      num(R.total[k],`SUM(${col(sc)}${r}:${col(tc-1)}${r})`),num(R.total[k]-R.inv[k],`${col(tc)}${r}-D${r}`),
+      num(R.pay[k],`A${r}*SUMIF(${rng(info.bond,'C')},"Pay out",${rng(info.bond,'H')})`)]);}
+  const wsY=X.utils.aoa_to_sheet(yy);wsY['!cols']=[{wch:10},{wch:8},{wch:6},{wch:18},...SEGS.map(()=>({wch:17})),{wch:18},{wch:18},{wch:22}];
+
+  X.utils.book_append_sheet(wb,wsS,'Summary');
+  X.utils.book_append_sheet(wb,wsP,'Portfolio summary');
+  SEGS.forEach(s=>X.utils.book_append_sheet(wb,sheets[s.k],s.name));
+  X.utils.book_append_sheet(wb,wsY,'Year by year');
+  return saveFile(fileBase()+'.xlsx',X.write(wb,{bookType:'xlsx',type:'array'}));
+}
+
+function pieImage(S){
+  // Pie drawn on a canvas so it can be placed in the PDF as an image.
+  const px=900,c=document.createElement('canvas');c.width=c.height=px;const g=c.getContext('2d'),C=px/2,Rr=px*.46;
+  g.fillStyle='#fff';g.fillRect(0,0,px,px);
+  pieSlices(S.rows,S.tot.inv).forEach(o=>{g.beginPath();g.moveTo(C,C);g.arc(C,C,Rr,o.a0,o.a1);g.closePath();g.fillStyle=SEG_HEX[SEGS.indexOf(o.r.s)];g.fill();
+    g.lineWidth=7;g.strokeStyle='#fff';g.lineJoin='round';g.stroke()});
+  pieSlices(S.rows,S.tot.inv).forEach(o=>{if(o.r.pct<5)return;const m=(o.a0+o.a1)/2;g.font='600 44px Helvetica, Arial, sans-serif';g.textAlign='center';g.textBaseline='middle';
+    g.lineWidth=6;g.strokeStyle='rgba(0,0,0,.35)';const t=Math.round(o.r.pct)+'%',x=C+Rr*.62*Math.cos(m),y=C+Rr*.62*Math.sin(m);g.strokeText(t,x,y);g.fillStyle='#fff';g.fillText(t,x,y)});
+  return c.toDataURL('image/png');
+}
+function buildPdf(){
+  if(!window.jspdf){toast('The PDF library did not load. Check the internet connection and reload.');return}
+  const R=compute(),Y=R.Y,doc=new window.jspdf.jsPDF({unit:'mm',format:'a4'}),PW=210,M=14;
+  const ink=[20,20,20],gold=[138,90,0],mut=[92,92,92],line=[232,230,225],tint=[255,248,229],green=[30,138,76],greenT=[232,245,238],chrome=[255,167,0];
+  const rs=v=>short(v,'Rs ');const rgb=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16));
+  const nm=state.name.trim()||'Client';
+  const base={theme:'plain',margin:{left:M,right:M,top:34,bottom:22},styles:{font:'helvetica',fontSize:8.5,fillColor:[255,255,255],cellPadding:{top:1.8,bottom:1.8,left:2,right:2},textColor:ink,lineColor:line,lineWidth:{bottom:.1}},headStyles:{fillColor:[255,255,255],textColor:mut,fontStyle:'bold',fontSize:7.5}};
+  // Running header for every page after the cover
+  const header=(title,sub)=>{
+    doc.setFillColor(...chrome);doc.rect(0,0,doc.internal.pageSize.getWidth(),3,'F');
+    doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(...mut);doc.text(`WEALTH PROJECTION  ·  ${nm.toUpperCase()}`,M,11,{charSpace:.4});
+    doc.setFont('times','bold');doc.setFontSize(18);doc.setTextColor(...ink);doc.text(title,M,21);
+    doc.setFillColor(...green);doc.rect(M,24,18,.9,'F');
+    if(sub){doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(...mut);doc.text(sub,M+22,24.8)}
+    doc.setFillColor(255,255,255);
+  };
+  const sectionHead=(t,y)=>{doc.setFont('helvetica','bold');doc.setFontSize(12);doc.setTextColor(...ink);doc.text(t,M,y);doc.setFillColor(...green);doc.rect(M,y+2,12,.7,'F')};
+
+  /* ---- Page 1: overview ---- */
+  doc.setFillColor(...chrome);doc.rect(0,0,PW,3,'F');
+  doc.setTextColor(...mut);doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.text('WEALTH PROJECTION',M,14,{charSpace:.6});
+  doc.setTextColor(...ink);doc.setFont('times','bold');doc.setFontSize(24);doc.text(doc.splitTextToSize(nm,105)[0],M,27);
+  doc.setFont('helvetica','normal');doc.setFontSize(10.5);doc.setTextColor(...mut);
+  doc.text(`Age ${state.age} today, ${state.age+Y} in ${YEAR0+Y}   |   ${Y}-year plan`,M,35);
+  doc.text(`${today()}${state.by?'   |   Prepared by '+state.by:''}`,M,41.5);
+  doc.setFontSize(8.5);doc.text(`PROJECTED VALUE IN ${YEAR0+Y}`,PW-M,14,{align:'right'});
+  doc.setTextColor(...ink);doc.setFont('times','bold');doc.setFontSize(30);doc.text(rs(R.fv),PW-M,29,{align:'right'});
+  doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(...green);
+  if(R.put) doc.text(`${rs(R.put)} invested grows ${(R.fv/R.put).toFixed(1)}x`,PW-M,37,{align:'right'});
+  doc.setFont('helvetica','normal');doc.setTextColor(...gold);
+  if(R.paid>0) doc.text(`plus ${rs(R.paid)} in bond coupons paid out`,PW-M,42,{align:'right'});
+  const tiles=[['Lumpsum today',rs(R.lump)],['Monthly SIP',rs(R.sip)],['Total invested',rs(R.put)],['Expected gain',rs(R.gain),1],['Weighted return',R.wret.toFixed(1)+'% p.a.']];
+  const tw=(PW-2*M-4*3)/5;let y=50;
+  tiles.forEach((t,i)=>{const x=M+i*(tw+3);doc.setFillColor(...(t[2]?greenT:[255,255,255]));doc.setDrawColor(...(t[2]?[180,220,196]:line));doc.roundedRect(x,y,tw,17,2,2,'FD');
+    doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.setTextColor(...(t[2]?green:mut));doc.text(t[0],x+3,y+6);
+    doc.setFont('helvetica','bold');doc.setFontSize(11);doc.setTextColor(...(t[2]?green:ink));doc.text(t[1],x+3,y+13)});
+  y=80;sectionHead('How the portfolio grows',y);y+=9;
+  if(R.put){
+    const invC=[107,113,120],gr=k=>Math.max(0,R.total[k]-R.inv[k]);
+    // legend with the end figures
+    doc.setFontSize(9);let lx=M;
+    [[invC,'Amount invested',rs(R.inv[Y])],[green,'Growth',rs(gr(Y))]].forEach(([c,t,v])=>{doc.setFillColor(...c);doc.rect(lx,y-2.8,3.2,3.2,'F');doc.setFont('helvetica','normal');doc.setTextColor(...mut);doc.text(t,lx+5,y);
+      const w=doc.getTextWidth(t);doc.setFont('helvetica','bold');doc.setTextColor(...(c===green?green:ink));doc.text(v,lx+7+w,y);lx+=w+doc.getTextWidth(v)+16});
+    doc.setFont('helvetica','normal');doc.setTextColor(...mut);doc.text(`Total in ${YEAR0+Y}`,lx,y);doc.setFont('helvetica','bold');doc.setTextColor(...ink);doc.text(rs(R.total[Y]),lx+doc.getTextWidth(`Total in ${YEAR0+Y}`)+2,y);
+    y+=8;const cx=M+18,cw=PW-M-cx,ch=100,max=niceMax(R.total[Y]),py=v=>y+ch*(1-v/max);
+    doc.setFont('helvetica','normal');doc.setLineWidth(.15);doc.setDrawColor(...line);doc.setFontSize(7.5);doc.setTextColor(...mut);
+    for(let i=0;i<=4;i++){const v=max*i/4;doc.line(cx,py(v),cx+cw,py(v));doc.text(i?rs(v):'0',cx-2,py(v)+1,{align:'right'})}
+    const n=Y+1,slot=cw/n,bw=Math.min(slot*.64,13);
+    for(let k=0;k<=Y;k++){const bx=cx+slot*(k+.5)-bw/2,yi=py(R.inv[k]),yt=py(R.total[k]),y0=py(0);
+      doc.setFillColor(...invC);doc.rect(bx,yi,bw,y0-yi,'F');
+      if(yi-yt>.6){doc.setFillColor(...green);doc.rect(bx,yt,bw,yi-yt-.5,'F')}
+      const show=Y<=12||k===Y||k===0||k%2===0;
+      if(show){doc.setFont('helvetica','bold');doc.setFontSize(Y>10?6.2:7);doc.setTextColor(...ink);doc.text(short(R.total[k],''),bx+bw/2,yt-1.5,{align:'center'});
+        doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.setTextColor(...mut);doc.text(k?String(YEAR0+k):'Today',bx+bw/2,y+ch+4,{align:'center'})}}
+    // labels inside the last bar
+    const lbx=cx+slot*(Y+.5),yi=py(R.inv[Y]),yt=py(R.total[Y]),y0=py(0);doc.setFont('helvetica','bold');doc.setFontSize(6);doc.setTextColor(255,255,255);
+    if(bw>=9){if(yi-yt>8)doc.text('Growth',lbx,(yi+yt)/2+1,{align:'center'});if(y0-yi>8)doc.text('Invested',lbx,(yi+y0)/2+1,{align:'center'})}
+    doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.setTextColor(...mut);doc.text('Amounts above each bar are the total value, in Rs (L = lakh, Cr = crore).',M,y+ch+10);
+    y+=ch+18;
+    // assumptions box
+    doc.setFillColor(...tint);doc.setDrawColor(255,230,166);doc.roundedRect(M,y,PW-2*M,24,2,2,'FD');
+    doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(...ink);doc.text('What if',M+4,y+7);
+    doc.setFont('helvetica','normal');doc.setFontSize(8.8);doc.setTextColor(...mut);
+    doc.text(`If returns are ${state.spread}% lower or higher than expected, the value in ${YEAR0+Y} would be ${rs(R.low[Y])} to ${rs(R.high[Y])}.`,M+4,y+13);
+    doc.text(`At ${state.infl}% inflation, ${rs(R.fv)} in ${YEAR0+Y} is worth about ${rs(R.fv/Math.pow(1+state.infl/100,Y))} in today's money.`,M+4,y+19);
+  }
+
+  /* ---- Page 2: investments ---- */
+  doc.addPage();
+  const T2='Investments and expected returns';
+  const body=[];SEGS.forEach(s=>{const hs=state.holdings.filter(h=>h.seg===s.k&&filled(h));if(!hs.length)return;
+    body.push([{content:`${s.name}   ${rs(R.segInv[s.k][Y])} invested, ${rs(R.seg[s.k][Y])} projected`,colSpan:6,styles:{fontStyle:'bold',fillColor:tint,textColor:ink}}]);
+    hs.forEach(h=>{const rr=R.rows[h.id],b=isBond(h);
+      body.push([h.name||'(unnamed)',h.cat||CAT_DEF[h.seg],
+        b?`${matText(h,Y)}. Coupon ${h.coupon==='payout'?'paid out':'reinvested in MFs'}`:h.mode==='lump'?'Lumpsum':'Monthly SIP'+(h.step?`, +${h.step}%/yr`:''),
+        'Rs '+nf.format(Math.round(h.amount))+(h.mode==='sip'?' /mo':''),(+h.ret).toFixed(1)+'%'+(b?' yield':''),
+        b?(h.coupon==='payout'?`${rs(rr.fv)}\n+ ${rs(rr.pay)} paid out`:`${rs(rr.fv)}\nincl. ${rs(rr.cmf)} in MFs`):rs(rr.fv)])})});
+  body.push([{content:'Total',styles:{fontStyle:'bold'}},'','',{content:rs(R.put)+' invested',styles:{fontStyle:'bold'}},{content:R.wret.toFixed(1)+'%',styles:{fontStyle:'bold'}},{content:rs(R.fv),styles:{fontStyle:'bold',textColor:green}}]);
+  doc.autoTable(Object.assign({},base,{startY:34,head:[['Investment','Category','Type','Amount','Expected return p.a.',`Value in ${YEAR0+Y}`]],body,
+    columnStyles:{0:{cellWidth:44},1:{cellWidth:36},2:{cellWidth:30},3:{halign:'right'},4:{halign:'right',textColor:gold,fontStyle:'bold'},5:{halign:'right'}},
+    didParseCell:d=>{if(d.section==='head'&&d.column.index>=3)d.cell.styles.halign='right'},
+    didDrawPage:()=>header(T2,'Every investment, with the return we have assumed for it')}));
+  y=doc.lastAutoTable.finalY+6;
+  if(state.holdings.some(h=>isBond(h)&&filled(h))){doc.setFont('helvetica','normal');doc.setFontSize(7.8);doc.setTextColor(...mut);
+    const bl=doc.splitTextToSize(`Bonds: coupons are paid once a year. When a bond matures before ${YEAR0+Y}, the amount is assumed to go into a similar bond at the same yield until ${YEAR0+Y}. Reinvested coupons are split equally across the mutual funds listed and grow at each fund's expected return.`,PW-2*M);
+    if(y+bl.length*3.4>270){doc.addPage();header(T2+' (continued)');y=34}
+    doc.text(bl,M,y);}
+
+  /* ---- Page 3: year by year (landscape so every column fits) ---- */
+  doc.addPage('a4','landscape');
+  const P=R.paid>0,q=v=>short(v,''),yb=[];for(let k=1;k<=Y;k++)yb.push([YEAR0+k,state.age+k,q(R.inv[k]),...R.active.map(s=>q(R.seg[s.k][k])),q(R.total[k]),q(R.total[k]-R.inv[k]),...(P?[q(R.pay[k])]:[])]);
+  const gainCol=3+R.active.length+1;
+  doc.autoTable(Object.assign({},base,{startY:34,head:[['Year','Age','Invested so far',...R.active.map(s=>s.name),'Total value','Gain',...(P?['Coupons paid out']:[])]],body:yb,
+    styles:Object.assign({},base.styles,{halign:'right',minCellWidth:16,cellPadding:{top:2.6,bottom:2.6,left:1.5,right:1.5},fontSize:R.active.length+(P?1:0)>8?7.5:8.5}),columnStyles:{0:{halign:'left',minCellWidth:10},1:{minCellWidth:8}},
+    didParseCell:d=>{if(d.section==='head')d.cell.styles.halign=d.column.index?'right':'left';
+      if(d.section==='body'){if(d.column.index===gainCol){d.cell.styles.textColor=green;d.cell.styles.fontStyle='bold'}if(d.row.index===Y-1)d.cell.styles.fontStyle='bold'}},
+    didDrawPage:()=>header('Year by year','Value at the end of each year. Amounts in Rs; L = lakh, Cr = crore')}));
+  if(TAX){const TX=exitTax(R),yy=doc.lastAutoTable.finalY+6,w=doc.internal.pageSize.getWidth();doc.setFillColor(...tint);doc.roundedRect(M,yy,w-2*M,10,2,2,'F');doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(...ink);
+    doc.text(`If fully exited in ${YEAR0+Y}: gain ${rs(TX.gain)}, ${rs(TX.exempt)} exempt, tax ${rs(TX.tax)}, in hand after tax ${rs(TX.net)}.`,M+4,yy+6.5)}
+
+  /* ---- Last page: portfolio summary ---- */
+  doc.addPage('a4','portrait');header('Portfolio summary','The whole plan on one page');
+  const S=summary();
+  if(S.tot.inv){
+    const pd=72;doc.addImage(pieImage(S),'PNG',M,34,pd,pd);
+    // legend beside the pie
+    let ly=40;doc.setFontSize(9);
+    S.rows.forEach(r=>{doc.setFillColor(...rgb(SEG_HEX[SEGS.indexOf(r.s)]));doc.rect(M+pd+10,ly-2.8,3.2,3.2,'F');
+      doc.setFont('helvetica','normal');doc.setTextColor(...ink);doc.text(r.s.name,M+pd+16,ly);
+      doc.setFont('helvetica','bold');doc.text(r.pct.toFixed(1)+'%',PW-M-28,ly,{align:'right'});
+      doc.setFont('helvetica','normal');doc.setTextColor(...mut);doc.text(rs(r.inv),PW-M,ly,{align:'right'});ly+=7.5});
+    doc.setDrawColor(...line);doc.setLineWidth(.2);doc.line(M+pd+10,ly-3.5,PW-M,ly-3.5);
+    doc.setFont('helvetica','bold');doc.setTextColor(...ink);doc.text('Total',M+pd+16,ly+1.5);doc.text('100%',PW-M-28,ly+1.5,{align:'right'});doc.text(rs(S.tot.inv),PW-M,ly+1.5,{align:'right'});
+    // headline growth boxes
+    let by=Math.max(34+pd,ly+6)+8;const bw=(PW-2*M-(S.H.length-1)*4)/S.H.length;
+    S.H.forEach((h,i)=>{const x=M+i*(bw+4);doc.setFillColor(...greenT);doc.setDrawColor(180,220,196);doc.roundedRect(x,by,bw,20,2,2,'FD');
+      doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(...green);doc.text(`After ${h} years (${YEAR0+h})${h>Y?' *':''}`,x+4,by+6.5);
+      doc.setFont('helvetica','bold');doc.setFontSize(14);doc.text(rs(S.tot.vals[i]),x+4,by+15)});
+    by+=28;
+    const hb=S.rows.map(r=>[r.s.name,rs(r.inv),r.pct.toFixed(1)+'%',r.ret.toFixed(1)+'%',...r.vals.map(rs)]);
+    hb.push([{content:'Total',styles:{fontStyle:'bold'}},{content:rs(S.tot.inv),styles:{fontStyle:'bold'}},{content:'100%',styles:{fontStyle:'bold'}},{content:S.tot.ret.toFixed(1)+'%',styles:{fontStyle:'bold'}},...S.tot.vals.map(v=>({content:rs(v),styles:{fontStyle:'bold'}}))]);
+    doc.autoTable(Object.assign({},base,{startY:by,head:[['Investment category','Amount invested','Allocation','Assumed return',...S.H.map(h=>`After ${h} yrs${h>Y?' *':''}`)]],body:hb,
+      styles:Object.assign({},base.styles,{halign:'right',fillColor:[255,255,255],cellPadding:{top:2.6,bottom:2.6,left:2,right:2}}),columnStyles:{0:{halign:'left',cellWidth:36},3:{textColor:gold,fontStyle:'bold'}},
+      didParseCell:d=>{if(d.section==='head')d.cell.styles.halign=d.column.index?'right':'left';if(d.section==='body'&&d.column.index>=4)d.cell.styles.textColor=green},
+      didDrawCell:d=>{if(d.section==='body'&&d.column.index===0&&d.row.index<S.rows.length){doc.setFillColor(...rgb(SEG_HEX[SEGS.indexOf(S.rows[d.row.index].s)]));doc.rect(d.cell.x-2.5,d.cell.y+d.cell.height/2-1.3,2.6,2.6,'F');doc.setFillColor(255,255,255)}},
+      margin:Object.assign({},base.margin,{left:M+3}),
+      didDrawPage:()=>{}}));
+    const note=`Amount invested is the total put in over the ${Y}-year plan, including every SIP instalment. Allocation is each category's share of that amount. Assumed return is the average of the expected returns entered, weighted by amount.`
+      +(S.beyond?` * Beyond the ${Y}-year plan: assumes every investment and SIP carries on as entered.`:'')+(R.paid>0?' Bond coupons paid out are not included in these values.':'');
+    doc.setFont('helvetica','normal');doc.setFontSize(7.8);doc.setTextColor(...mut);const nl=doc.splitTextToSize(note,PW-2*M);doc.text(nl,M,doc.lastAutoTable.finalY+6);
+    // tax on complete exit
+    if(TAX){const TX=exitTax(R);let ty=doc.lastAutoTable.finalY+8+nl.length*3.4+6;if(ty>215){doc.addPage();header('Tax on complete exit');ty=34}
+    else{doc.setFont('helvetica','bold');doc.setFontSize(12);doc.setTextColor(...ink);doc.text('Tax on complete exit',M,ty);doc.setFillColor(...green);doc.rect(M,ty+2,12,.7,'F');ty+=5}
+    const tb=TX.rows.map(r=>[r.s.name,rs(r.inv),rs(r.val),rs(r.gain),r.slabI?rs(r.slabI):'-',rs(r.taxable),rs(r.tax),rs(r.val-r.tax)]);
+    tb.push([{content:'Total',styles:{fontStyle:'bold',halign:'left'}},...[TX.inv,TX.val,TX.gain,TX.slabI,TX.taxable,TX.tax,TX.net].map(v=>({content:rs(v),styles:{fontStyle:'bold'}}))]);
+    if(TX.coup>0) tb.push([{content:'Bond coupons paid out over the plan',colSpan:3,styles:{halign:'left'}},rs(TX.coup),rs(TX.coup),'-',rs(TX.coupTax),rs(TX.coup-TX.coupTax)]);
+    doc.autoTable(Object.assign({},base,{startY:ty,head:[['Investment category','Invested',`Value in ${YEAR0+Y}`,'Gain',`Bond interest at ${TX.slab}% slab`,'Capital gain taxable','Tax','In hand after tax']],body:tb,
+      styles:Object.assign({},base.styles,{halign:'right',fillColor:[255,255,255],fontSize:8,cellPadding:{top:2.2,bottom:2.2,left:1.5,right:1.5}}),columnStyles:{0:{halign:'left',cellWidth:30},3:{textColor:green},6:{textColor:[179,38,30],fontStyle:'bold'},7:{fontStyle:'bold'}},
+      didParseCell:d=>{if(d.section==='head')d.cell.styles.halign=d.column.index?'right':'left'}}));
+    doc.setFont('helvetica','normal');doc.setFontSize(7.4);doc.setTextColor(...mut);doc.text(doc.splitTextToSize(`If everything is sold in ${YEAR0+Y}. Exemption used: ${rs(TX.exempt)}. ${TAXNOTE_PDF}`,PW-2*M),M,doc.lastAutoTable.finalY+5);}
+  }
+
+  // footer on every page
+  const disc='Illustration only. Projections apply the expected rates of return shown and are not a guarantee, assurance or forecast of future performance. Actual returns depend on market conditions and may be lower or negative. Investments in mutual funds, SIFs, PMS, AIFs, private equity, bonds and GIFT City funds are subject to market risks; read all scheme and offer documents carefully. Figures are before taxes, fees and exit loads.';
+  const pages=doc.getNumberOfPages();
+  for(let p=1;p<=pages;p++){doc.setPage(p);const w=doc.internal.pageSize.getWidth(),h=doc.internal.pageSize.getHeight(),fy=h-14;
+    doc.setDrawColor(...line);doc.setLineWidth(.2);doc.line(M,fy-4,w-M,fy-4);doc.setFont('helvetica','normal');doc.setFontSize(6.8);doc.setTextColor(...mut);doc.text(doc.splitTextToSize(disc,w-2*M-16),M,fy);doc.text(`${p} / ${pages}`,w-M,fy,{align:'right'})}
+  return saveFile(fileBase()+'.pdf',doc.output('arraybuffer'));
+}
+['btn-pdf','btn-pdf2'].forEach(i=>$(i).addEventListener('click',buildPdf));
+['btn-xlsx','btn-xlsx2'].forEach(i=>$(i).addEventListener('click',buildXlsx));
+
+/* ---------- keep the plan across reloads ---------- */
+function persist(){try{localStorage.setItem('wealth-projection-draft',JSON.stringify(state))}catch(e){}}
+function start(saved){
+  let s=saved&&saved.holdings?saved:null;
+  if(!s){try{s=JSON.parse(localStorage.getItem('wealth-projection-draft')||'null')}catch(e){}}
+  if(s&&Array.isArray(s.holdings)) state=Object.assign(blank(),s);
+  state.holdings.forEach(h=>{if(!h.cat)h.cat=CAT_DEF[h.seg];if(isBond(h)){if(!h.coupon)h.coupon='reinvest';if(!(+h.mat>0))h.mat=5}});
+  show();
+}
+try{window.claude?.hot?.snapshot?.(()=>state)}catch(e){}
+if(window.claude?.hot?.ready) window.claude.hot.ready(start); else start(window.claude?.hot?.data??{});
+</script>
+<script>
+"use strict";
+/* ================= TARGET PLANNER ================= */
+const GMIN={pms:5e6,aif:1e7,sif:1e6};
+const GMIN_NAME={pms:'PMS',aif:'AIF',sif:'SIF'};
+let gseq=1;
+function gblank(){return {tax:12.5,exempt:125000,slab:30,name:'',age:40,target:50000000,years:7,ret:12,basis:'target',mode:'lump',lump:10000000,step:0,by:'',
+  rows:[
+    {id:'g'+gseq++,name:'Mutual Funds (Equity)',w:40,r:12,sip:true},
+    {id:'g'+gseq++,name:'Debt',w:15,r:7.5,sip:true,tx:'slab'},
+    {id:'g'+gseq++,name:'SIF',w:10,r:12.5,sip:false,min:'sif'},
+    {id:'g'+gseq++,name:'PMS',w:15,r:15,sip:false,min:'pms'},
+    {id:'g'+gseq++,name:'AIF',w:10,r:14,sip:false,min:'aif'},
+    {id:'g'+gseq++,name:'Private Equity',w:10,r:18,sip:false}]}}
+let G=gblank();
+const GHEX=SEG_HEX;
+// Growth factors. Lumpsum compounds yearly; SIP compounds monthly, paid at the start of each month, stepped up yearly.
+const gLF=(r,n)=>Math.pow(1+r/100,n);
+function gSF(r,s,n){const i=r/1200,a=i===0?12:((Math.pow(1+i,12)-1)/i)*(1+i),q=Math.pow(1+i,12),g=1+s/100;
+  return a*(Math.abs(q-g)<1e-12?n*Math.pow(q,n-1):(Math.pow(q,n)-Math.pow(g,n))/(q-g))}
+const gSIPInv=(m,s,n)=>m*12*(s===0?n:(Math.pow(1+s/100,n)-1)/(s/100));
+function gcompute(){
+  const n=G.years,T=+G.target||0,s=G.mode==='lump'?0:(+G.step||0);
+  const ws=G.rows.reduce((a,r)=>a+(+r.w||0),0)||0;
+  const mix=ws?G.rows.reduce((a,r)=>a+(+r.w||0)*(+r.r||0),0)/ws:0;
+  const R=G.basis==='mix'?mix:(+G.ret||0);
+  const lf=gLF(R,n),sf=gSF(R,s,n);
+  let L=0,m=0,surplus=false;
+  if(G.mode==='lump') L=T/lf;
+  else if(G.mode==='sip') m=T/sf;
+  else{L=+G.lump||0;const gap=T-L*lf;if(gap>0)m=gap/sf;else surplus=true}
+  const val=[],inv=[];for(let y=0;y<=n;y++){val.push(L*gLF(R,y)+(y?m*gSF(R,s,y):0));inv.push(L+(y?gSIPInv(m,s,y):0))}
+  // component split: lumpsum by share; SIP only into components marked "Takes SIP", by their shares
+  const wsip=G.rows.reduce((a,r)=>a+(r.sip?(+r.w||0):0),0);
+  const rows=G.rows.map((r,i)=>{const w=ws?(+r.w||0)/ws:0,amt=L*w,ms=m>0&&wsip?m*(r.sip?(+r.w||0)/wsip:0):0;
+    const proj=amt*gLF(+r.r||0,n)+(ms?ms*gSF(+r.r||0,s,n):0);
+    const below=r.min&&amt>0&&amt<GMIN[r.min];
+    return Object.assign({},r,{i,share:w,amt,ms,proj,below})});
+  const proj=rows.reduce((a,r)=>a+r.proj,0);
+  return {n,T,s,ws,mix,R,lf,sf,L,m,surplus,val,inv,put:inv[n],rows,proj,wsip,noSipHome:m>0&&!wsip,need:G.mode==='both'&&surplus?T/lf:0};
+}
+function gshow(){
+  $('g-name').value=G.name;$('g-age').value=G.age;$('g-target').value=G.target?nf.format(G.target):'';$('g-years').value=G.years;$('g-years-r').value=G.years;
+  $('g-ret').value=G.ret;$('g-tax').value=G.tax??12.5;$('g-ex').value=nf.format(Math.round(G.exempt??125000));$('g-slab').value=G.slab??30;$('g-lump').value=G.lump?nf.format(G.lump):'';$('g-step').value=G.step;$('g-by').value=G.by;
+  grenderTable();grefresh();
+}
+function grenderTable(){
+  $('g-table').innerHTML=`<tr><th>Component</th><th>Share</th><th>Expected return</th><th>Takes SIP</th><th class="taxonly">Taxed as</th><th>Invest today</th><th>Monthly SIP</th><th>Projected value</th><th></th></tr>`
+   +G.rows.map((r,i)=>`<tr data-gid="${r.id}">
+     <td><span class="name-cell"><i class="sw" style="background:${GHEX[i%GHEX.length]}"></i><input type="text" id="${r.id}-n" data-gf="name" value="${esc(r.name)}" aria-label="Component name" class="gname"></span></td>
+     <td><span class="pct"><input type="number" id="${r.id}-w" data-gf="w" min="0" max="100" step="1" value="${r.w}" aria-label="Share of ${esc(r.name)}"></span></td>
+     <td><span class="pct"><input type="number" id="${r.id}-r" data-gf="r" min="0" max="60" step="0.5" value="${r.r}" class="ret-in" aria-label="Expected return of ${esc(r.name)}"></span></td>
+     <td style="text-align:center"><input type="checkbox" id="${r.id}-s" data-gf="sip" ${r.sip?'checked':''} aria-label="${esc(r.name)} takes SIP"></td>
+     <td class="taxonly"><select id="${r.id}-x" data-gf="tx" aria-label="How ${esc(r.name)} is taxed"><option value="ltcg"${r.tx!=='slab'?' selected':''}>Capital gains</option><option value="slab"${r.tx==='slab'?' selected':''}>Income slab</option></select></td>
+     <td id="${r.id}-amt"></td><td id="${r.id}-ms"></td><td id="${r.id}-pv" class="g"></td>
+     <td><button class="del" type="button" data-gdel="${r.id}" aria-label="Remove ${esc(r.name)}" title="Remove">×</button></td></tr>`).join('')
+   +`<tr class="tot"><td>Total</td><td id="g-wsum"></td><td id="g-mix"></td><td></td><td class="taxonly"></td><td id="g-tamt"></td><td id="g-tms"></td><td id="g-tpv" class="g"></td><td></td></tr>`;
+  $('g-add').hidden=G.rows.length>=8;
+}
+function grefresh(){
+  const C=gcompute(),n=C.n,end=YEAR0+n,nm=G.name.trim()||'The client';
+  document.querySelectorAll('[data-gm]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.gm===G.mode));
+  document.querySelectorAll('[data-gb]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.gb===G.basis));
+  $('g-lump-f').hidden=G.mode!=='both';$('g-step-f').hidden=G.mode==='lump';
+  $('g-span').textContent=`Age ${G.age} today, ${G.age+n} in ${end}`;
+  $('g-target-h').textContent=G.target>=1e5?short(G.target):'';
+  $('g-lump-h').textContent=G.lump>=1e5?short(G.lump):'';
+  $('g-ret-h').textContent=G.basis==='mix'?`Using the mix's ${C.mix.toFixed(1)}% instead`:`The mix below gives ${C.mix.toFixed(1)}%`;
+  let lab,big,sent;
+  if(G.mode==='lump'){lab='Invest today';big=short(C.L);sent=`To reach <b>${short(C.T)}</b> by ${end} at <b>${C.R.toFixed(1)}%</b> a year, ${esc(nm)} needs to invest <b>${short(C.L)}</b> today.`}
+  else if(G.mode==='sip'){lab='Invest every month';big=short(C.m);sent=`To reach <b>${short(C.T)}</b> by ${end} at <b>${C.R.toFixed(1)}%</b> a year, ${esc(nm)} needs a monthly SIP of <b>${short(C.m)}</b>${C.s?`, raised by ${C.s}% each year`:''}.`}
+  else if(C.surplus){lab='Lumpsum is enough';big=short(C.need);sent=`${short(G.lump)} today already reaches <b>${short(C.T)}</b> by ${end} at <b>${C.R.toFixed(1)}%</b>. Only <b>${short(C.need)}</b> is needed, so no SIP is required.`}
+  else{lab='Plus every month';big=short(C.m);sent=`With <b>${short(C.L)}</b> invested today, ${esc(nm)} needs a monthly SIP of <b>${short(C.m)}</b>${C.s?`, raised by ${C.s}% each year`:''} to reach <b>${short(C.T)}</b> by ${end} at <b>${C.R.toFixed(1)}%</b>.`}
+  $('g-lab').textContent=lab;$('g-big').textContent=big;
+  $('g-sent').innerHTML=sent+(C.put>0?`<div><span class="pill-up">▲ ${short(Math.max(0,C.val[n]-C.put))} expected growth</span></div>`:'');
+  $('g-tiles').innerHTML=[
+    ['Target',short(C.T),`by ${end}, age ${G.age+n}`],
+    ['Return used',C.R.toFixed(1)+'%',G.basis==='mix'?'the mix\'s own return':'portfolio return entered'],
+    ['Lumpsum today',short(C.L),C.L?inr(C.L):'none'],
+    ['Monthly SIP',short(C.m),C.m?(C.s?`starting, +${C.s}% a year`:'every month'):'none'],
+    [`Total invested over ${n} yrs`,short(C.put),inr(C.put)],
+    ['Expected growth',short(Math.max(0,C.val[n]-C.put)),C.put?`${Math.round((C.val[n]-C.put)/C.put*100)}% on money invested`:'','gain']
+  ].map(t=>`<div class="tile ${t[3]||''}"><div class="lab">${t[0]}</div><div class="val num">${t[1]}</div><div class="sub num">${t[2]}</div></div>`).join('');
+  $('g-chart-sub').textContent=`${YEAR0} to ${end}, at ${C.R.toFixed(1)}% a year`;
+  gdrawChart(C);
+  // table values
+  C.rows.forEach(r=>{$(r.id+'-amt').innerHTML=short(r.amt)+(r.below?`<div><span class="pill-warn">Below ${GMIN_NAME[r.min]} minimum of ${short(GMIN[r.min])}</span></div>`:'');
+    $(r.id+'-ms').textContent=r.ms?short(r.ms):'–';$(r.id+'-pv').textContent=short(r.proj)});
+  $('g-wsum').innerHTML=`<span class="${Math.round(C.ws)===100?'up':'warn'}">${+C.ws.toFixed(1)}%</span>`;
+  $('g-mix').textContent=C.mix.toFixed(1)+'%';$('g-tamt').textContent=short(C.L);$('g-tms').textContent=C.m?short(C.m):'–';$('g-tpv').textContent=short(C.proj);
+  const pct=C.T?C.proj/C.T*100:0,ok=pct>=99.5;
+  $('g-status').innerHTML=`<span class="${ok?'pill-up':'pill-warn'}">${ok?'✓':'!'} At each component's own return this mix reaches ${short(C.proj)}, ${Math.round(pct)}% of the target</span>`
+    +(Math.round(C.ws)!==100?` <span class="pill-warn">Shares add up to ${+C.ws.toFixed(1)}%. Amounts use them scaled to 100%.</span>`:'')
+    +(C.noSipHome?` <span class="pill-warn">Tick "Takes SIP" on at least one component to place the SIP.</span>`:'');
+  $('g-note').textContent=`The amount needed is worked out at ${C.R.toFixed(1)}% a year. The lumpsum is split by share. ${C.m?'The monthly SIP goes only to components marked "Takes SIP", split by their shares. ':''}Projected value grows each component at its own expected return, so the total can differ from the target when the mix's return (${C.mix.toFixed(1)}%) differs from the return used.`;
+  gdrawPie(C);
+  const gt=gTax(C),end2=YEAR0+n;
+  $('g-tax-sub').textContent=`If everything is sold in ${end2}, when the target is reached.`;
+  $('g-taxtiles').innerHTML=[['Value at target',short(gt.val),`in ${end2}`],['Amount invested',short(C.put),''],['Gain',short(gt.gain),`${short(gt.exempt)} exempt`,'gain'],['Tax',short(gt.tax),`${gt.rate}% on ${short(gt.taxable)}${gt.slabG?` + ${gt.slab}% on ${short(gt.slabG)}`:''}`,'tax'],['In hand after tax',short(gt.net),C.T?`${Math.round(gt.net/C.T*100)}% of the target`:'']]
+    .map(t=>`<div class="tile ${t[3]||''}"><div class="lab">${t[0]}</div><div class="val num">${t[1]}</div><div class="sub num">${t[2]}</div></div>`).join('');
+  gpersist();
+}
+// Gains from components marked "Income slab" are taxed at the slab rate with no exemption; the rest is capital gains after the exemption.
+// The share taxed at slab comes from each component's own projected gain.
+function gTax(C){const r=(+G.tax||0),sl=(+(G.slab??30)||0),E=Math.max(0,+(G.exempt??125000)||0),val=C.val[C.n],gain=val-C.put;
+  const pos=C.rows.map(x=>Math.max(0,x.proj-x.amt-(x.ms?gSIPInv(x.ms,C.s,C.n):0))),P=pos.reduce((a,b)=>a+b,0),PS=pos.reduce((a,b,i)=>a+(C.rows[i].tx==='slab'?b:0),0),share=P?PS/P:0;
+  const slabG=Math.max(0,gain)*share,cg=Math.max(0,gain)-slabG,taxable=Math.max(0,cg-E),tax=taxable*r/100+slabG*sl/100;
+  return {rate:r,slab:sl,E,val,gain,share,slabG,exempt:Math.min(E,cg),taxable,tax,net:val-tax}}
+function gdrawChart(C){
+  const n=C.n,box=$('g-chart'),gr=y=>Math.max(0,C.val[y]-C.inv[y]);
+  $('g-legend').innerHTML=`<span><i class="sw" style="background:var(--inv)"></i>Amount invested <b class="num" style="color:var(--ink)">${short(C.inv[n])}</b></span><span><i class="sw" style="background:var(--green)"></i>Growth <b class="num up">${short(gr(n))}</b></span><span><i class="sw dash"></i>Target <b class="num" style="color:var(--ink)">${short(C.T)}</b></span>`;
+  if(!C.T){box.innerHTML='<div class="empty">Enter a target amount to see the path.</div>';return}
+  const W=920,H=380,L=64,Rm=10,T=30,B=46,pw=W-L-Rm,ph=H-T-B,slot=pw/(n+1),bw=Math.min(slot*.64,56);
+  const max=niceMax(Math.max(C.T,C.val[n])*1.04),yy=v=>T+ph*(1-v/max),cx=y=>L+slot*(y+.5);
+  let g='';
+  for(let i=0;i<=4;i++){const v=max*i/4,py=yy(v);g+=`<line x1="${L}" x2="${W-Rm}" y1="${py}" y2="${py}" stroke="var(--line)"/><text x="${L-8}" y="${py+4}" text-anchor="end">${i?short(v):'0'}</text>`}
+  const every=n>20?3:n>12?2:1,lbl=y=>y===n||y===0||n<=12||(y%every===0&&n-y>=every);
+  for(let y=0;y<=n;y++){const x=cx(y)-bw/2,yi=yy(C.inv[y]),yt=yy(C.val[y]),y0=yy(0);
+    g+=`<g class="bar" data-y="${y}"><rect x="${x}" y="${yi}" width="${bw}" height="${Math.max(0,y0-yi)}" fill="var(--inv)"/>`;
+    if(yi-yt>2.5) g+=`<rect x="${x}" y="${yt}" width="${bw}" height="${yi-yt-2}" rx="3" fill="var(--green)"/>`;
+    g+=`<rect x="${cx(y)-slot/2}" y="${T}" width="${slot}" height="${ph}" fill="transparent"/></g>`;
+    if(lbl(y)){g+=`<text x="${cx(y)}" y="${yt-7}" text-anchor="middle" style="font-weight:600;fill:var(--ink)">${short(C.val[y])}</text><text x="${cx(y)}" y="${H-B+18}" text-anchor="middle">${y?YEAR0+y:'Today'}</text><text x="${cx(y)}" y="${H-B+34}" text-anchor="middle" style="font-size:11px;opacity:.8">age ${G.age+y}</text>`}}
+  const ty=yy(C.T);g+=`<line x1="${L}" x2="${W-Rm}" y1="${ty}" y2="${ty}" stroke="var(--ink)" stroke-width="1.5" stroke-dasharray="6 5"/><text x="${L+6}" y="${ty-6}" style="font-weight:700;fill:var(--ink)">Target ${short(C.T)}</text>`;
+  box.innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Value each year split into amount invested and growth, with the target marked.">${g}</svg><div class="tip" hidden></div>`;
+  const svg=box.firstChild,tip=box.querySelector('.tip');
+  const move=e=>{const b=svg.getBoundingClientRect(),y=clamp(Math.floor(((e.clientX-b.left)/b.width*W-L)/slot),0,n);
+    svg.querySelectorAll('.bar').forEach(el=>el.style.opacity=+el.dataset.y===y?1:.55);
+    tip.innerHTML=`<h4>${y?YEAR0+y:'Today'} · age ${G.age+y}</h4><div class="r"><span><i class="sw" style="background:var(--inv)"></i>Amount invested</span><span class="num">${short(C.inv[y])}</span></div><div class="r"><span><i class="sw" style="background:var(--green)"></i>Growth</span><span class="num up">${short(gr(y))}</span></div><div class="r t"><span>Total value</span><span class="num">${short(C.val[y])}</span></div><div class="r"><span>Share of target</span><span class="num">${Math.round(C.val[y]/C.T*100)}%</span></div>`;
+    tip.hidden=false;placeTip(tip,cx(y)/W)};
+  svg.addEventListener('pointermove',move);svg.addEventListener('pointerdown',move);
+  svg.addEventListener('pointerleave',()=>{tip.hidden=true;svg.querySelectorAll('.bar').forEach(el=>el.style.opacity=1)});
+}
+function gslices(C){let a=-Math.PI/2;const tot=C.rows.reduce((s,r)=>s+r.share,0);return C.rows.filter(r=>r.share>0).map(r=>{const sw=r.share/tot*Math.PI*2,o={r,a0:a,a1:a+sw};a+=sw;return o})}
+function gdrawPie(C){
+  const sl=gslices(C),c=130,R0=120;
+  $('g-legend2').innerHTML=sl.map(o=>`<div><i class="sw" style="background:${GHEX[o.r.i%GHEX.length]}"></i>${esc(o.r.name)}<b>${(o.r.share*100).toFixed(1)}%</b><span class="m">${short(o.r.amt)}${o.r.ms?' + '+short(o.r.ms)+'/mo':''}</span></div>`).join('');
+  if(!sl.length){$('g-pie').innerHTML='';return}
+  const p=a=>`${(c+R0*Math.cos(a)).toFixed(2)},${(c+R0*Math.sin(a)).toFixed(2)}`;
+  $('g-pie').innerHTML=`<svg viewBox="0 0 260 260" role="img" aria-label="Share of each component. The table gives the same figures.">${sl.map(o=>o.a1-o.a0>=Math.PI*2-1e-6?`<circle cx="${c}" cy="${c}" r="${R0}" fill="${GHEX[o.r.i%GHEX.length]}"/>`:`<path d="M${c},${c}L${p(o.a0)}A${R0},${R0} 0 ${o.a1-o.a0>Math.PI?1:0} 1 ${p(o.a1)}Z" fill="${GHEX[o.r.i%GHEX.length]}" stroke="var(--surface)" stroke-width="2.5" stroke-linejoin="round"><title>${esc(o.r.name)}: ${(o.r.share*100).toFixed(1)}%</title></path>`).join('')}
+    ${sl.map(o=>{if(o.r.share<.05)return '';const m=(o.a0+o.a1)/2;return `<text x="${(c+R0*.62*Math.cos(m)).toFixed(1)}" y="${(c+R0*.62*Math.sin(m)+5).toFixed(1)}" text-anchor="middle" style="font:600 13px var(--body);fill:#fff;paint-order:stroke;stroke:rgba(0,0,0,.35);stroke-width:2.5px">${Math.round(o.r.share*100)}%</text>`}).join('')}</svg>`;
+}
+/* events */
+const gnum=(v,a,b,d)=>{const x=parseFloat(v);return isNaN(x)?d:clamp(x,a,b)};
+$('g-name').addEventListener('input',e=>{G.name=e.target.value;grefresh()});
+$('g-by').addEventListener('input',e=>{G.by=e.target.value;gpersist()});
+$('g-age').addEventListener('input',e=>{G.age=Math.round(gnum(e.target.value,1,100,G.age));grefresh()});
+$('g-target').addEventListener('input',e=>{const v=parseAmt(e.target.value);G.target=isNaN(v)?0:v;grefresh()});
+$('g-target').addEventListener('blur',e=>{e.target.value=G.target?nf.format(Math.round(G.target)):''});
+$('g-lump').addEventListener('input',e=>{const v=parseAmt(e.target.value);G.lump=isNaN(v)?0:v;grefresh()});
+$('g-lump').addEventListener('blur',e=>{e.target.value=G.lump?nf.format(Math.round(G.lump)):''});
+const gsetYears=v=>{G.years=v;$('g-years').value=v;$('g-years-r').value=v;grefresh()};
+$('g-years-r').addEventListener('input',e=>gsetYears(+e.target.value));
+$('g-years').addEventListener('change',e=>gsetYears(Math.round(gnum(e.target.value,1,30,G.years))));
+$('g-tax').addEventListener('input',e=>{G.tax=gnum(e.target.value,0,40,0);grefresh()});
+$('g-slab').addEventListener('input',e=>{G.slab=gnum(e.target.value,0,45,0);grefresh()});
+$('g-ex').addEventListener('input',e=>{const v=parseAmt(e.target.value||'0');G.exempt=isNaN(v)?0:v;grefresh()});
+$('g-ex').addEventListener('blur',e=>{e.target.value=nf.format(Math.round(G.exempt||0))});
+$('g-ret').addEventListener('input',e=>{G.ret=gnum(e.target.value,0,40,0);grefresh()});
+$('g-step').addEventListener('input',e=>{G.step=gnum(e.target.value,0,50,0);grefresh()});
+$('g-mode').addEventListener('click',e=>{const b=e.target.closest('[data-gm]');if(b){G.mode=b.dataset.gm;grefresh()}});
+$('g-basis').addEventListener('click',e=>{const b=e.target.closest('[data-gb]');if(b){G.basis=b.dataset.gb;grefresh()}});
+$('g-table').addEventListener('input',e=>{const tr=e.target.closest('[data-gid]');if(!tr)return;const r=G.rows.find(x=>x.id===tr.dataset.gid),f=e.target.dataset.gf;if(!r)return;
+  if(f==='name')r.name=e.target.value;else if(f==='sip')r.sip=e.target.checked;else if(f==='tx')r.tx=e.target.value;else r[f]=gnum(e.target.value,0,f==='w'?100:60,0);grefresh()});
+$('g-table').addEventListener('change',e=>{if(e.target.dataset.gf==='sip'){const tr=e.target.closest('[data-gid]'),r=G.rows.find(x=>x.id===tr.dataset.gid);r.sip=e.target.checked;grefresh()}});
+$('g-table').addEventListener('click',e=>{const d=e.target.closest('[data-gdel]');if(d){G.rows=G.rows.filter(r=>r.id!==d.dataset.gdel);grenderTable();grefresh()}});
+$('g-add').addEventListener('click',()=>{if(G.rows.length>=8)return;const r={id:'g'+gseq++,name:'New component',w:0,r:10,sip:false};G.rows.push(r);grenderTable();grefresh();$(r.id+'-n').select()});
+
+/* exports */
+const gfile=()=>(G.name.trim()||'Client').replace(/[^\w\- ]+/g,'').trim().replace(/\s+/g,'_')+'_Target_Plan_'+G.years+'Y';
+function gPdf(){
+  if(!window.jspdf){toast('The PDF library did not load. Check the internet connection and reload.');return}
+  const C=gcompute(),n=C.n,doc=new window.jspdf.jsPDF({unit:'mm',format:'a4'}),PW=210,M=14,ink=[20,20,20],mut=[92,92,92],line=[232,230,225],green=[30,138,76],greenT=[232,245,238],gold=[138,90,0],tint=[255,248,229],invC=[107,113,120],amber=[176,96,0];
+  const rs=v=>short(v,'Rs '),rgb=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16)),nm=G.name.trim()||'Client',end=YEAR0+n;
+  const base={theme:'plain',margin:{left:M,right:M,top:34,bottom:22},styles:{font:'helvetica',fontSize:8.8,fillColor:[255,255,255],cellPadding:{top:2.4,bottom:2.4,left:2,right:2},textColor:ink,lineColor:line,lineWidth:{bottom:.1}},headStyles:{fillColor:[255,255,255],textColor:mut,fontStyle:'bold',fontSize:7.5}};
+  const head2=(t,sub)=>{doc.setFillColor(255,167,0);doc.rect(0,0,PW,3,'F');doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(...mut);doc.text(`TARGET PLAN  ·  ${nm.toUpperCase()}`,M,11,{charSpace:.4});
+    doc.setFont('times','bold');doc.setFontSize(18);doc.setTextColor(...ink);doc.text(t,M,21);doc.setFillColor(...green);doc.rect(M,24,18,.9,'F');if(sub){doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(...mut);doc.text(sub,M+22,24.8)}doc.setFillColor(255,255,255)};
+  // page 1
+  doc.setFillColor(255,167,0);doc.rect(0,0,PW,3,'F');
+  doc.setTextColor(...mut);doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.text('TARGET PLAN',M,14,{charSpace:.6});
+  doc.setTextColor(...ink);doc.setFont('times','bold');doc.setFontSize(24);doc.text(doc.splitTextToSize(nm,110)[0],M,27);
+  doc.setFont('helvetica','normal');doc.setFontSize(10.5);doc.setTextColor(...mut);doc.text(`Age ${G.age} today, ${G.age+n} in ${end}   |   ${n}-year plan`,M,35);doc.text(`${today()}${G.by?'   |   Prepared by '+G.by:''}`,M,41.5);
+  doc.setFontSize(8.5);doc.text(`TARGET BY ${end}`,PW-M,14,{align:'right'});doc.setTextColor(...ink);doc.setFont('times','bold');doc.setFontSize(30);doc.text(rs(C.T),PW-M,29,{align:'right'});
+  doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(...green);doc.text(`at ${C.R.toFixed(1)}% a year`,PW-M,37,{align:'right'});
+  // what is needed
+  let y=50;doc.setFillColor(...tint);doc.setDrawColor(255,230,166);doc.roundedRect(M,y,PW-2*M,26,2,2,'FD');
+  doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(...mut);doc.text('WHAT IS NEEDED',M+5,y+7,{charSpace:.4});
+  const parts=[];if(C.L)parts.push([G.mode==='both'&&C.surplus?'Lumpsum needed today':'Invest today',rs(G.mode==='both'&&C.surplus?C.need:C.L)]);if(C.m)parts.push(['Monthly SIP'+(C.s?` (+${C.s}% a year)`:''),rs(C.m)]);if(!parts.length)parts.push(['Invest today',rs(0)]);
+  parts.forEach((p,i)=>{const x=M+5+i*85;doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(...mut);doc.text(p[0],x,y+14);doc.setFont('times','bold');doc.setFontSize(20);doc.setTextColor(...ink);doc.text(p[1],x,y+22)});
+  y+=32;
+  const tiles=[['Total invested',rs(C.put)],['Expected growth',rs(Math.max(0,C.val[n]-C.put)),1],['Return used',C.R.toFixed(1)+'% p.a.'],['Mix return',C.mix.toFixed(1)+'% p.a.']];
+  const tw=(PW-2*M-3*3)/4;tiles.forEach((t,i)=>{const x=M+i*(tw+3);doc.setFillColor(...(t[2]?greenT:[255,255,255]));doc.setDrawColor(...(t[2]?[180,220,196]:line));doc.roundedRect(x,y,tw,16,2,2,'FD');
+    doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.setTextColor(...(t[2]?green:mut));doc.text(t[0],x+3,y+6);doc.setFont('helvetica','bold');doc.setFontSize(11);doc.setTextColor(...(t[2]?green:ink));doc.text(t[1],x+3,y+12.5)});
+  y+=26;doc.setFont('helvetica','bold');doc.setFontSize(12);doc.setTextColor(...ink);doc.text('Path to the target',M,y);doc.setFillColor(...green);doc.rect(M,y+2,12,.7,'F');y+=9;
+  doc.setFontSize(9);let lx=M;[[invC,'Amount invested'],[green,'Growth']].forEach(([c,t])=>{doc.setFillColor(...c);doc.rect(lx,y-2.8,3.2,3.2,'F');doc.setFont('helvetica','normal');doc.setTextColor(...mut);doc.text(t,lx+5,y);lx+=doc.getTextWidth(t)+12});
+  doc.setDrawColor(...ink);doc.setLineWidth(.5);doc.setLineDashPattern([1.5,1.2],0);doc.line(lx,y-1,lx+7,y-1);doc.setLineDashPattern([],0);doc.text('Target',lx+9,y);
+  y+=6;const cx=M+18,cw=PW-M-cx,ch=90,max=niceMax(Math.max(C.T,C.val[n])*1.04),py=v=>y+ch*(1-v/max);
+  doc.setLineWidth(.15);doc.setDrawColor(...line);doc.setFontSize(7.5);doc.setTextColor(...mut);
+  for(let i=0;i<=4;i++){const v=max*i/4;doc.line(cx,py(v),cx+cw,py(v));doc.text(i?rs(v):'0',cx-2,py(v)+1,{align:'right'})}
+  const slot=cw/(n+1),bw=Math.min(slot*.64,13);
+  for(let k=0;k<=n;k++){const bx=cx+slot*(k+.5)-bw/2,yi=py(C.inv[k]),yt=py(C.val[k]),y0=py(0);doc.setFillColor(...invC);doc.rect(bx,yi,bw,y0-yi,'F');if(yi-yt>.6){doc.setFillColor(...green);doc.rect(bx,yt,bw,yi-yt-.5,'F')}
+    if(n<=12||k===n||k%2===0){doc.setFont('helvetica','bold');doc.setFontSize(n>10?6.2:7);doc.setTextColor(...ink);doc.text(short(C.val[k],''),bx+bw/2,yt-1.5,{align:'center'});doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.setTextColor(...mut);doc.text(k?String(YEAR0+k):'Today',bx+bw/2,y+ch+4,{align:'center'})}}
+  doc.setDrawColor(...ink);doc.setLineWidth(.4);doc.setLineDashPattern([1.5,1.2],0);doc.line(cx,py(C.T),cx+cw,py(C.T));doc.setLineDashPattern([],0);
+  doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(...ink);doc.text(`Target ${rs(C.T)}`,cx+2,py(C.T)-1.5);
+  // page 2: split
+  doc.addPage();head2('How to split it','Where the money goes, and what each part could grow to');
+  const pd=62;doc.addImage(gPieImage(C),'PNG',M,32,pd,pd);
+  let ly=38;doc.setFontSize(9);C.rows.filter(r=>r.share>0).forEach(r=>{doc.setFillColor(...rgb(GHEX[r.i%GHEX.length]));doc.rect(M+pd+10,ly-2.8,3.2,3.2,'F');doc.setFont('helvetica','normal');doc.setTextColor(...ink);doc.text(r.name,M+pd+16,ly);doc.setFont('helvetica','bold');doc.text((r.share*100).toFixed(1)+'%',PW-M,ly,{align:'right'});ly+=7});
+  const body=C.rows.filter(r=>r.share>0||r.ms>0).map(r=>[r.name+(TAX&&r.tx==='slab'?'\n(taxed at slab)':''),(r.share*100).toFixed(1)+'%',(+r.r).toFixed(1)+'%',rs(r.amt)+(r.below?`\nBelow ${GMIN_NAME[r.min]} min ${short(GMIN[r.min],'Rs ')}`:''),r.ms?rs(r.ms):'-',rs(r.proj)]);
+  body.push([{content:'Total',styles:{fontStyle:'bold'}},{content:'100%',styles:{fontStyle:'bold'}},{content:C.mix.toFixed(1)+'%',styles:{fontStyle:'bold'}},{content:rs(C.L),styles:{fontStyle:'bold'}},{content:C.m?rs(C.m):'-',styles:{fontStyle:'bold'}},{content:rs(C.proj),styles:{fontStyle:'bold'}}]);
+  doc.autoTable(Object.assign({},base,{startY:Math.max(32+pd,ly)+8,head:[['Component','Share','Expected return','Invest today','Monthly SIP',`Projected value ${end}`]],body,
+    columnStyles:{0:{cellWidth:46},1:{halign:'right'},2:{halign:'right',textColor:gold,fontStyle:'bold'},3:{halign:'right'},4:{halign:'right'},5:{halign:'right',textColor:green,fontStyle:'bold'}},
+    didParseCell:d=>{if(d.section==='head'&&d.column.index)d.cell.styles.halign='right';if(d.section==='body'&&d.column.index===3&&String(d.cell.raw).includes('Below'))d.cell.styles.textColor=amber},
+    didDrawCell:d=>{if(d.section==='body'&&d.column.index===0&&d.row.index<body.length-1){const r=C.rows.filter(r=>r.share>0||r.ms>0)[d.row.index];doc.setFillColor(...rgb(GHEX[r.i%GHEX.length]));doc.rect(d.cell.x-2.5,d.cell.y+d.cell.height/2-1.3,2.6,2.6,'F');doc.setFillColor(255,255,255)}},
+    margin:Object.assign({},base.margin,{left:M+3})}));
+  y=doc.lastAutoTable.finalY+7;const pct=C.T?C.proj/C.T*100:0;
+  doc.setFillColor(...(pct>=99.5?greenT:tint));doc.roundedRect(M,y,PW-2*M,11,2,2,'F');doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(...(pct>=99.5?green:amber));
+  doc.text(`At each component's own return this mix reaches ${rs(C.proj)}, ${Math.round(pct)}% of the target.`,M+4,y+7);
+  doc.setFont('helvetica','normal');doc.setFontSize(7.8);doc.setTextColor(...mut);
+  const gnl=doc.splitTextToSize($('g-note').textContent,PW-2*M);doc.text(gnl,M,y+18);
+  if(TAX){const gt=gTax(C);let ty=y+22+gnl.length*3.4+6;if(ty>225){doc.addPage();head2('Tax on complete exit');ty=34}else{doc.setFont('helvetica','bold');doc.setFontSize(12);doc.setTextColor(...ink);doc.text('Tax on complete exit',M,ty);doc.setFillColor(...green);doc.rect(M,ty+2,12,.7,'F');ty+=7}
+    const items=[['Value at target',rs(gt.val),ink],['Amount invested',rs(C.put),ink],[`Gain (${rs(gt.exempt)} exempt)`,rs(gt.gain),green],['Tax',rs(gt.tax),[179,38,30]],['In hand after tax',rs(gt.net),ink]],bw=(PW-2*M-4*3)/5;
+    items.forEach((t,i)=>{const x=M+i*(bw+3);doc.setFillColor(255,255,255);doc.setDrawColor(...line);doc.roundedRect(x,ty,bw,16,2,2,'FD');doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.setTextColor(...mut);doc.text(t[0],x+3,ty+6);doc.setFont('helvetica','bold');doc.setFontSize(11);doc.setTextColor(...t[2]);doc.text(t[1],x+3,ty+12.5)});
+    doc.setFont('helvetica','normal');doc.setFontSize(7.4);doc.setTextColor(...mut);doc.text(doc.splitTextToSize(`If everything is sold in ${end}, when the target is reached. Capital gains taxed at ${gt.rate}% on ${rs(gt.taxable)} after the exemption${gt.slabG?`; gains from components marked income slab (${rs(gt.slabG)}) taxed at ${gt.slab}%`:''}. ${TAXNOTE_PDF}`,PW-2*M),M,ty+22)}
+  const disc='Illustration only. The amounts needed are worked out from the return assumed and are not a guarantee or forecast. Actual returns may be lower or negative, and the target may not be reached. Investments are subject to market risks; read all scheme and offer documents carefully. Figures are before taxes, fees and exit loads.';
+  const pages=doc.getNumberOfPages();for(let p=1;p<=pages;p++){doc.setPage(p);doc.setDrawColor(...line);doc.setLineWidth(.2);doc.line(M,279,PW-M,279);doc.setFont('helvetica','normal');doc.setFontSize(6.8);doc.setTextColor(...mut);doc.text(doc.splitTextToSize(disc,PW-2*M-16),M,283);doc.text(`${p} / ${pages}`,PW-M,283,{align:'right'})}
+  return saveFile(gfile()+'.pdf',doc.output('arraybuffer'));
+}
+function gPieImage(C){const px=800,c=document.createElement('canvas');c.width=c.height=px;const g=c.getContext('2d'),O=px/2,R0=px*.46;g.fillStyle='#fff';g.fillRect(0,0,px,px);
+  const sl=gslices(C);sl.forEach(o=>{g.beginPath();g.moveTo(O,O);g.arc(O,O,R0,o.a0,o.a1);g.closePath();g.fillStyle=GHEX[o.r.i%GHEX.length];g.fill();g.lineWidth=7;g.strokeStyle='#fff';g.lineJoin='round';g.stroke()});
+  sl.forEach(o=>{if(o.r.share<.05)return;const m=(o.a0+o.a1)/2,t=Math.round(o.r.share*100)+'%',x=O+R0*.62*Math.cos(m),y=O+R0*.62*Math.sin(m);g.font='600 40px Helvetica, Arial, sans-serif';g.textAlign='center';g.textBaseline='middle';g.lineWidth=6;g.strokeStyle='rgba(0,0,0,.35)';g.strokeText(t,x,y);g.fillStyle='#fff';g.fillText(t,x,y)});
+  return c.toDataURL('image/png')}
+function gXlsx(){
+  if(!window.XLSX){toast('The Excel library did not load. Check the internet connection and reload.');return}
+  const X=window.XLSX,C=gcompute(),n=C.n,Z='#,##0',num=(v,f,z=Z)=>{const c={t:'n',v:isFinite(v)?Math.round(v*100)/100:0,z};if(f)c.f=f;return c},pc=(v,f)=>num(v,f,'0.0'),txt=v=>({t:'s',v:String(v??'')});
+  const k=G.rows.length,rf=21,rl=rf+k-1,rt=rl+1;
+  // B4 target, B5 years, B6 portfolio return, B7 basis, B8 mode, B9 lumpsum available, B10 step-up; results from B12
+  const mixF=`IF(SUM(B${rf}:B${rl})=0,0,SUMPRODUCT(B${rf}:B${rl},C${rf}:C${rl})/SUM(B${rf}:B${rl}))`;
+  const Rr='$B$13',S='IF($B$8="Lumpsum",0,$B$10)';
+  const lf=(r,nn)=>`(1+(${r})/100)^(${nn})`;
+  const sf=(r,s,nn)=>{const i=`((${r})/1200)`,q=`(1+${i})^12`,g=`(1+(${s})/100)`;return `(IF(${i}=0,12,((1+${i})^12-1)/${i}*(1+${i}))*IF(ABS(${q}-${g})<1E-12,(${nn})*(${q})^((${nn})-1),((${q})^(${nn})-${g}^(${nn}))/(${q}-${g})))`};
+  const L=`$B$14`,Mm=`$B$15`;
+  const aoa=[[txt('Target plan')],[txt('Inputs are in column B (rows 3 to 10) and in the share, return and SIP columns of the component table. Everything else is a formula.')],
+    [txt('Client'),txt(G.name)],[txt('Target amount (₹)'),num(C.T)],[txt('Time frame (years)'),num(n,null,'0')],[txt('Portfolio return (% p.a.)'),pc(+G.ret||0)],
+    [txt('Work out using: "Portfolio" or "Mix"'),txt(G.basis==='mix'?'Mix':'Portfolio')],[txt('How the client will invest: "Lumpsum", "SIP" or "Both"'),txt({lump:'Lumpsum',sip:'SIP',both:'Both'}[G.mode])],
+    [txt('Lumpsum available today, used when "Both" (₹)'),num(+G.lump||0)],[txt('SIP step-up (% a year)'),pc(+G.step||0)],[],
+    [txt('Results'),...(TAX?[txt(''),txt(''),txt('Yearly exemption on gains (₹)'),num(gTax(C).E)]:[])],
+    [txt('Return used (% p.a.)'),pc(C.R,`IF($B$7="Mix",${mixF},$B$6)`),...(TAX?[txt(''),txt('Long-term capital gains tax on complete exit (%)'),pc(+G.tax||0)]:[])],
+    [txt('Lumpsum to invest today (₹)'),num(C.L,`IF($B$8="Lumpsum",$B$4/${lf(Rr,'$B$5')},IF($B$8="Both",$B$9,0))`),...(TAX?[txt(''),txt('Income slab rate for components taxed at slab (%)'),pc(+(G.slab??30)||0)]:[])],
+    [txt('Monthly SIP, starting amount (₹)'),num(C.m,`IF($B$8="Lumpsum",0,MAX(0,$B$4-${L}*${lf(Rr,'$B$5')})/${sf(Rr,S,'$B$5')})`),...(TAX?[txt(''),txt('Share of gain taxed at slab'),num(gTax(C).share,`IF(SUMIF($I$${rf}:$I$${rl},">0")=0,0,SUMIFS($I$${rf}:$I$${rl},$H$${rf}:$H$${rl},"Slab",$I$${rf}:$I$${rl},">0")/SUMIF($I$${rf}:$I$${rl},">0"))`,'0.0%')]:[])],
+    [txt('Total invested over the plan (₹)'),num(C.put,`${L}+${Mm}*12*IF(${S}=0,$B$5,((1+${S}/100)^$B$5-1)/(${S}/100))`)],
+    [txt('Value at end of plan at the return used (₹)'),num(C.val[n],`${L}*${lf(Rr,'$B$5')}+${Mm}*${sf(Rr,S,'$B$5')}`),...(TAX?[txt(''),txt('Tax on complete exit (₹)'),num(gTax(C).tax,`MAX(0,MAX(0,B17-B16)*(1-E15)-E12)*E13/100+MAX(0,B17-B16)*E15*E14/100`)]:[])],
+    [txt('Expected growth (₹)'),num(C.val[n]-C.put,'B17-B16'),...(TAX?[txt(''),txt('In hand after tax (₹)'),num(gTax(C).net,'B17-E17')]:[])],[],
+    [txt('Component'),txt('Share (%)'),txt('Expected return (% p.a.)'),txt('Takes SIP (Yes/No)'),txt('Invest today (₹)'),txt('Monthly SIP (₹)'),txt(`Projected value at own return (₹)`),...(TAX?[txt('Taxed as (Capital gains / Slab)'),txt('Gain at own return (₹)')]:[])]];
+  const wsip=`SUMIF($D$${rf}:$D$${rl},"Yes",$B$${rf}:$B$${rl})`;
+  C.rows.forEach((r,j)=>{const x=rf+j;aoa.push([txt(r.name),pc(+r.w||0),pc(+r.r||0),txt(r.sip?'Yes':'No'),
+    num(r.amt,`IF(SUM($B$${rf}:$B$${rl})=0,0,${L}*B${x}/SUM($B$${rf}:$B$${rl}))`),
+    num(r.ms,`IF(OR(D${x}<>"Yes",${wsip}=0),0,${Mm}*B${x}/${wsip})`),
+    num(r.proj,`E${x}*${lf(`C${x}`,'$B$5')}+F${x}*${sf(`C${x}`,S,'$B$5')}`),...(TAX?[txt(r.tx==='slab'?'Slab':'Capital gains'),
+    num(r.proj-r.amt-(r.ms?gSIPInv(r.ms,C.s,n):0),`G${x}-E${x}-F${x}*12*IF(${S}=0,$B$5,((1+${S}/100)^$B$5-1)/(${S}/100))`)]:[])])});
+  aoa.push([txt('Total'),pc(C.ws,`SUM(B${rf}:B${rl})`),pc(C.mix,mixF),txt(''),num(C.L,`SUM(E${rf}:E${rl})`),num(C.m,`SUM(F${rf}:F${rl})`),num(C.proj,`SUM(G${rf}:G${rl})`)]);
+  aoa.push([txt('Mix reaches (% of target)'),pc(C.T?C.proj/C.T*100:0,`IF($B$4=0,0,G${rt}/$B$4*100)`)],[]);
+  const yh=aoa.length+1;aoa.push([txt('Year'),txt('Years from today'),txt('Amount invested (₹)'),txt('Value (₹)'),txt('Growth (₹)')]);
+  for(let y=0;y<=n;y++){const x=yh+1+y;aoa.push([num(YEAR0+y,`${YEAR0}+B${x}`,'0'),num(y,null,'0'),num(C.inv[y],`${L}+IF(B${x}=0,0,${Mm}*12*IF(${S}=0,B${x},((1+${S}/100)^B${x}-1)/(${S}/100)))`),
+    num(C.val[y],`${L}*${lf(Rr,`B${x}`)}+IF(B${x}=0,0,${Mm}*${sf(Rr,S,`B${x}`)})`),num(C.val[y]-C.inv[y],`D${x}-C${x}`)])}
+  aoa.push([],[txt('Illustration only. Amounts needed are worked out from the return assumed and are not a guarantee or forecast. Lumpsum compounds yearly; SIP compounds monthly with instalments at the start of each month.')]);
+  const ws=X.utils.aoa_to_sheet(aoa);ws['!cols']=[{wch:52},{wch:18},{wch:22},{wch:44},{wch:18},{wch:18},{wch:30},{wch:26},{wch:22}];
+  const wb=X.utils.book_new();X.utils.book_append_sheet(wb,ws,'Target plan');
+  return saveFile(gfile()+'.xlsx',X.write(wb,{bookType:'xlsx',type:'array'}));
+}
+['g-pdf','g-pdf2'].forEach(i=>$(i).addEventListener('click',gPdf));
+['g-xlsx','g-xlsx2'].forEach(i=>$(i).addEventListener('click',gXlsx));
+
+/* storage + routing between the two tools */
+function gpersist(){try{localStorage.setItem('wealth-goal-draft',JSON.stringify(G))}catch(e){}}
+try{const s=JSON.parse(localStorage.getItem('wealth-goal-draft')||'null');if(s&&Array.isArray(s.rows)){G=Object.assign(gblank(),s);gseq=G.rows.length+10;G.rows.forEach((r,i)=>r.id='g'+(i+1))}}catch(e){}
+let gReady=false;
+function route(){
+  const h=location.hash,goal=h==='#goal',swp=h==='#swp';
+  $('goal').hidden=!goal;$('swp').hidden=!swp;
+  if(goal||swp){$('intake').hidden=true;$('dash').hidden=true;
+    if(goal){if(!gReady){if(!G.name&&state.name){G.name=state.name;G.age=state.age}gshow();gReady=true}else grefresh()}
+    else sroute();
+    window.scrollTo(0,0);
+  }else show();
+}
+</script>
+<script>
+"use strict";
+/* ================= SWP INCOME ================= */
+const TAXNOTE_PDF='Capital gains are taxed at the long-term rate shown, on the gain after the yearly exemption (Rs 1.25 L under Section 112A), deducted once since everything is sold in one year. Bond interest is taxed at the income slab rate shown, with no exemption, each year as it is earned. Debt funds bought after 1 April 2023 and gains held under a year are also taxed differently; check with a tax adviser.';
+const STYPES={mf:'Mutual Fund',sif:'SIF',bond:'Bond'};
+let sseq=1;
+function sDefStart(){const d=new Date();d.setMonth(d.getMonth()+1);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')}
+function sblank(){return {tax:12.5,exempt:125000,slab:30,name:'',age:60,lump:10000000,years:10,start:sDefStart(),rate:6,freq:'monthly',inc:0,by:'',
+  funds:[
+    {id:'s'+sseq++,type:'mf',name:'Balanced Advantage Fund (sample)',cat:'Balanced Advantage / Dynamic Asset Allocation',w:30,r:10},
+    {id:'s'+sseq++,type:'mf',name:'Corporate Bond Fund (sample)',cat:'Corporate Bond Fund',w:20,r:7.5},
+    {id:'s'+sseq++,type:'sif',name:'Hybrid Long-Short SIF (sample)',cat:'Hybrid Long-Short Fund',w:20,r:9.5},
+    {id:'s'+sseq++,type:'bond',name:'AAA PSU Bond (sample)',cat:'PSU Bonds',w:30,r:7.5}]}}
+let SW=sblank();
+const SHEX=SEG_HEX;
+function sMonthLabel(i){const [y,m]=SW.start.split('-').map(Number),d=new Date(y,m-1+i,1);return d.toLocaleDateString('en-IN',{month:'short',year:'numeric'})}
+// Simulation. Mutual funds and SIFs pay out the withdrawal % of their value at the start of each year, so the income moves with their value.
+// Bonds pay out the withdrawal % of the amount first invested in them (raised by the yearly increase, if any).
+// Within a year the amount is fixed and paid in equal parts at the end of each month (or once at year end). Each fund pays its own share.
+const sDyn=f=>f.type!=='bond';
+function scompute(){
+  const n=SW.years,L=+SW.lump||0,ws=SW.funds.reduce((a,f)=>a+(+f.w||0),0),mon=SW.freq==='monthly',p=mon?12:1,rate=(+SW.rate||0)/100,inc=(+SW.inc||0)/100;
+  const v=SW.funds.map(f=>ws?L*(+f.w||0)/ws:0),start=v.slice(),cost=v.slice(),wdF=SW.funds.map(()=>0),per1=SW.funds.map(()=>0),tr=(+SW.tax||0)/100,sl=(+(SW.slab??30)||0)/100,EX=Math.max(0,+(SW.exempt??125000)||0);let taxT=0,cgY=0,slabT=0;
+  const wret=ws?SW.funds.reduce((a,f)=>a+(+f.w||0)*(+f.r||0),0)/ws:0;
+  const years=[];let cum=0,out=null,pi=0;
+  for(let y=1;y<=n;y++){
+    const per=SW.funds.map((f,i)=>(sDyn(f)?v[i]*rate:start[i]*rate*Math.pow(1+inc,y-1))/p);
+    if(y===1) per.forEach((x,i)=>per1[i]=x);
+    const perT=per.reduce((a,b)=>a+b,0),open=v.reduce((a,b)=>a+b,0);let yg=0,yw=0,yt=0;cgY=0;const rows=[];
+    for(let k=0;k<p;k++){
+      const s0=v.reduce((a,b)=>a+b,0);let take=0;
+      let gainP=0;
+      let bondI=0;
+      SW.funds.forEach((f,i)=>{const b0=v[i];v[i]*=1+(+f.r||0)/100/p;if(f.type==='bond'){const gi=v[i]-b0;bondI+=gi;cost[i]+=gi}const t=Math.min(per[i],v[i]),g=v[i];
+        // average cost: the withdrawal removes cost in proportion to the value sold; the rest of it is gain
+        const cOut=g>0?cost[i]*t/g:0;cost[i]-=cOut;gainP+=t-cOut;v[i]-=t;wdF[i]+=t;take+=t});
+      // exemption: gains this year are tax-free until they pass the yearly limit
+      // bond interest is taxed at the slab rate as it is earned (and added to the bond's cost, so it is not taxed again)
+      const gp=Math.max(0,gainP),cgTax=y>=2?(Math.max(0,cgY+gp-EX)-Math.max(0,cgY-EX))*tr:0,bTax=bondI*sl,tax=cgTax+bTax;cgY+=gp;yt+=tax;taxT+=tax;slabT+=bTax;
+      const g=s0+0,c=v.reduce((a,b)=>a+b,0),growth=c+take-s0;yg+=growth;yw+=take;cum+=take;
+      if(out===null&&take<perT-0.5)out={y,label:mon?sMonthLabel(pi):`year ${y}`};
+      rows.push({label:mon?sMonthLabel(pi):`Year ${y}`,open:s0,growth,due:perT,take,close:c,cum,gain:gainP,bondI,tax,net:take-tax});pi++;
+    }
+    years.push({y,age:(+SW.age||0)+y,open,growth:yg,gainY:cgY,per:perT,due:perT*p,wd:yw,tax:yt,net:yw-yt,perNet:(yw-yt)/p,close:v.reduce((a,b)=>a+b,0),cum,rows,from:rows[0].label,to:rows[rows.length-1].label});
+  }
+  const funds=SW.funds.map((f,i)=>Object.assign({},f,{i,share:ws?(+f.w||0)/ws:0,amt:start[i],end:v[i],wd:wdF[i],per1:per1[i]}));
+  const Y1=years[0],YN=years[n-1];
+  const exitGain=v.reduce((a,x,i)=>a+x-cost[i],0),exRem=Math.max(0,EX-cgY),exitTax=Math.max(0,exitGain-exRem)*tr,endV=YN?YN.close:L,Y2=years[1]||Y1;
+  return {n,L,ws,wret,mon,p,years,funds,cum,end:endV,out,first:Y1?Y1.per:0,last:YN?YN.per:0,yr1:Y1?Y1.due:0,
+    taxT,slabT,netT:cum-taxT,rate:+SW.tax||0,slab:+(SW.slab??30)||0,EX,exRem,exitGain,exitTax,exitNet:endV-exitTax,net2:Y2?Y2.perNet:0,lastNet:YN?YN.perNet:0,costLeft:cost.reduce((a,b)=>a+b,0)};
+}
+function sshow(){
+  $('s-name').value=SW.name;$('s-age').value=SW.age;$('s-lump').value=SW.lump?nf.format(SW.lump):'';$('s-years').value=SW.years;$('s-years-r').value=SW.years;
+  $('s-start').value=SW.start;$('s-rate').value=SW.rate;$('s-tax').value=SW.tax??12.5;$('s-ex').value=nf.format(Math.round(SW.exempt??125000));$('s-slab').value=SW.slab??30;$('s-inc').value=SW.inc;$('s-by').value=SW.by;
+  srenderTable();srefresh();
+}
+const sCatSel=f=>{const groups=CATS[f.type],cur=f.cat||CAT_DEF[f.type],flat=groups.flatMap(g=>g[1]);
+  return `<select class="cat-sel" id="${f.id}-c" data-sf2="cat" aria-label="Category">${flat.includes(cur)?'':`<option selected>${esc(cur)}</option>`}${groups.map(g=>`<optgroup label="${esc(g[0])}">${g[1].map(c=>`<option${c===cur?' selected':''}>${esc(c)}</option>`).join('')}</optgroup>`).join('')}</select>`};
+function srenderTable(){
+  $('s-table').innerHTML=`<tr><th>Type</th><th>Fund or bond</th><th>Category</th><th>Share</th><th>Expected return</th><th>Amount invested</th><th id="s-perh">Monthly withdrawal</th><th>Value at end</th><th></th></tr>`
+   +SW.funds.map((f,i)=>`<tr data-sid="${f.id}">
+     <td><span class="name-cell"><i class="sw" style="background:${SHEX[i%SHEX.length]}"></i><select id="${f.id}-t" data-sf2="type" aria-label="Type">${Object.entries(STYPES).map(([k,v])=>`<option value="${k}"${k===f.type?' selected':''}>${v}</option>`).join('')}</select></span></td>
+     <td><input type="text" id="${f.id}-n" data-sf2="name" value="${esc(f.name)}" class="gname" aria-label="Name" placeholder="Name"></td>
+     <td>${sCatSel(f)}</td>
+     <td><span class="pct"><input type="number" id="${f.id}-w" data-sf2="w" min="0" max="100" step="1" value="${f.w}" aria-label="Share"></span></td>
+     <td><span class="pct"><input type="number" id="${f.id}-r" data-sf2="r" min="0" max="40" step="0.25" value="${f.r}" class="ret-in" aria-label="Expected return"></span></td>
+     <td id="${f.id}-amt"></td><td id="${f.id}-wd" class="g"></td><td id="${f.id}-end"></td>
+     <td><button class="del" type="button" data-sdel="${f.id}" aria-label="Remove ${esc(f.name||'this fund')}" title="Remove">×</button></td></tr>`).join('')
+   +`<tr class="tot"><td>Total</td><td></td><td></td><td id="s-wsum"></td><td id="s-wret"></td><td id="s-tamt"></td><td id="s-twd" class="g"></td><td id="s-tend"></td><td></td></tr>`;
+}
+function srefresh(){
+  const C=scompute(),n=C.n,nm=SW.name.trim()||'The client',per=C.mon?'a month':'a year',endY=C.years.length?C.years[n-1].to:'';
+  document.querySelectorAll('[data-sf]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.sf===SW.freq));
+  $('s-span').textContent=`Age ${SW.age} today, ${(+SW.age||0)+n} at the end`;
+  $('s-lump-h').textContent=SW.lump>=1e5?short(SW.lump):'';
+  $('s-rate-h').textContent=C.L?`${short(C.yr1)} in year 1. Funds and SIFs: % of their value each year. Bonds: % of the amount invested.`:'';
+  $('s-freq-h').textContent=C.mon?`${short(C.first)} a month in year 1`:`${short(C.first)} in year 1, paid at year end`;
+  $('s-lab').textContent=C.mon?'Monthly income in year 1':'Yearly income in year 1';
+  $('s-big').textContent=short(C.first);
+  const lasts=!C.out;
+  $('s-sent').innerHTML=(C.L?`From <b>${short(C.L)}</b>, ${esc(nm)} receives <b>${short(C.first)}</b> ${per} in year 1${n>1?`, ${C.last>=C.first?'rising':'changing'} to <b>${short(C.last)}</b> ${per} by year ${n} as the funds' value ${C.last>=C.first?'grows':'changes'}`:''}. Over ${n} years that is <b>${short(C.cum)}</b> paid out${lasts?`, with <b class="up">${short(C.end)}</b> still invested at the end.`:'.'}`:'Enter the lumpsum to see the income.')
+    +(TAX&&C.L&&C.taxT>0?` From year 2, after tax, about <b>${short(C.net2)}</b> ${per} reaches the client.`:'')
+    +(C.L?`<div>${lasts?`<span class="pill-up">✓ Lasts all ${n} years</span>`:`<span class="pill-warn">! Money runs out in ${C.out.label}</span>`}</div>`:'');
+  $('s-tiles').innerHTML=[
+    ['Lumpsum invested',short(C.L),inr(C.L)],
+    ['Withdrawal rate',(+SW.rate||0)+'% a year','of fund value; bonds of amount invested'],
+    [C.mon?`Monthly income, year ${n}`:`Yearly income, year ${n}`,short(C.last),C.first?`${C.last>=C.first?'+':''}${Math.round((C.last/C.first-1)*100)}% vs year 1`:''],
+    ['Portfolio return',C.wret.toFixed(1)+'%','weighted, per year'],
+    ['Total paid to client',short(C.cum),`over ${n} years, before tax`,'gain'],
+    ...(TAX?[['Tax over the plan',short(C.taxT),C.slabT?`incl. ${short(C.slabT)} on bond interest`:`${C.rate}% on gains, from year 2`,'tax']]:[]),
+    ['Value left at the end',short(C.end),C.L?`${Math.round(C.end/C.L*100)}% of the lumpsum`:'']
+  ].map(t=>`<div class="tile ${t[3]||''}"><div class="lab">${t[0]}</div><div class="val num">${t[1]}</div><div class="sub num">${t[2]}</div></div>`).join('');
+  $('s-perh').textContent=C.mon?'Monthly withdrawal':'Yearly withdrawal';
+  C.funds.forEach(f=>{$(f.id+'-amt').textContent=short(f.amt);$(f.id+'-wd').innerHTML=`${short(f.per1)}<div class="subn">${sDyn(f)?`${SW.rate}% of value, resets yearly`:`${SW.rate}% of amount invested`}</div>`;$(f.id+'-end').textContent=short(f.end)});
+  $('s-wsum').innerHTML=`<span class="${Math.round(C.ws)===100?'up':'warn'}">${+C.ws.toFixed(1)}%</span>`;$('s-wret').textContent=C.wret.toFixed(1)+'%';
+  $('s-tamt').textContent=short(C.L);$('s-twd').textContent=short(C.first);$('s-tend').textContent=short(C.end);
+  const rateNote=(+SW.rate||0)>C.wret+0.01?`<span class="pill-warn">The withdrawal rate (${SW.rate}%) is above the portfolio return (${C.wret.toFixed(1)}%), so the capital will shrink.</span>`:`<span class="pill-up">Withdrawal rate ${SW.rate}% is within the portfolio return of ${C.wret.toFixed(1)}%</span>`;
+  $('s-status').innerHTML=rateNote+(Math.round(C.ws)!==100?` <span class="pill-warn">Shares add up to ${+C.ws.toFixed(1)}%. Amounts use them scaled to 100%.</span>`:'');
+  $('s-chart-sub').textContent=`End of each year, ${n} years`;
+  sdrawChart(C);sdrawTable(C);spersist();
+}
+function sdrawChart(C){
+  const n=C.n,box=$('s-chart');
+  $('s-legend').innerHTML=`<span><i class="sw" style="background:var(--inv)"></i>Value still invested</span><span><i class="sw" style="background:var(--green)"></i>Paid to client so far</span><span><i class="sw dash"></i>Lumpsum ${short(C.L)}</span>`;
+  if(!C.L){box.innerHTML='<div class="empty">Enter the lumpsum to see the plan.</div>';return}
+  const W=920,H=380,L=64,Rm=10,T=30,B=46,pw=W-L-Rm,ph=H-T-B,slot=pw/(n+1),bw=Math.min(slot*.64,56);
+  const tops=[C.L,...C.years.map(y=>y.close+y.cum)],max=niceMax(Math.max(...tops,C.L)*1.04),yy=v=>T+ph*(1-v/max),cx=y=>L+slot*(y+.5);
+  let g='';
+  for(let i=0;i<=4;i++){const v=max*i/4,py=yy(v);g+=`<line x1="${L}" x2="${W-Rm}" y1="${py}" y2="${py}" stroke="var(--line)"/><text x="${L-8}" y="${py+4}" text-anchor="end">${i?short(v):'0'}</text>`}
+  {const ly=yy(C.L);g+=`<line x1="${L}" x2="${W-Rm}" y1="${ly}" y2="${ly}" stroke="var(--ink)" stroke-width="1.5" stroke-dasharray="6 5"/>`}
+  const every=n>20?3:n>12?2:1,lbl=y=>y===n||y===0||n<=12||(y%every===0&&n-y>=every);
+  for(let y=0;y<=n;y++){const val=y?C.years[y-1].close:C.L,cum=y?C.years[y-1].cum:0,x=cx(y)-bw/2,yv=yy(val),yc=yy(val+cum),y0=yy(0);
+    g+=`<g class="bar" data-y="${y}"><rect x="${x}" y="${yv}" width="${bw}" height="${Math.max(0,y0-yv)}" fill="var(--inv)"/>`;
+    if(yv-yc>2.5) g+=`<rect x="${x}" y="${yc}" width="${bw}" height="${yv-yc-2}" rx="3" fill="var(--green)"/>`;
+    g+=`<rect x="${cx(y)-slot/2}" y="${T}" width="${slot}" height="${ph}" fill="transparent"/></g>`;
+    if(lbl(y)) g+=`<text x="${cx(y)}" y="${yv+17}" text-anchor="middle" style="font-size:11px;font-weight:700;fill:#fff">${short(val)}</text>${y&&cum&&yv-yc>16?`<text x="${cx(y)}" y="${(yv+yc)/2+4}" text-anchor="middle" style="font-size:10.5px;font-weight:600;fill:#fff">+${short(cum)}</text>`:''}<text x="${cx(y)}" y="${H-B+18}" text-anchor="middle">${y?'Year '+y:'Start'}</text><text x="${cx(y)}" y="${H-B+34}" text-anchor="middle" style="font-size:11px;opacity:.8">age ${(+SW.age||0)+y}</text>`;}
+  box.innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Value still invested at the end of each year, with the total paid to the client stacked on top. The year-by-year table gives the same figures.">${g}</svg><div class="tip" hidden></div>`;
+  const svg=box.firstChild,tip=box.querySelector('.tip');
+  const move=e=>{const b=svg.getBoundingClientRect(),y=clamp(Math.floor(((e.clientX-b.left)/b.width*W-L)/slot),0,n),Yr=y?C.years[y-1]:null;
+    svg.querySelectorAll('.bar').forEach(el=>el.style.opacity=+el.dataset.y===y?1:.55);
+    tip.innerHTML=Yr?`<h4>Year ${y} · ${Yr.from} to ${Yr.to}</h4><div class="r"><span>Invested at start of year</span><span class="num">${short(Yr.open)}</span></div><div class="r"><span>Growth in the year</span><span class="num up">${short(Yr.growth)}</span></div><div class="r"><span>Withdrawal taken</span><span class="num">${short(Yr.wd)}</span></div><div class="r t"><span>Value after withdrawal</span><span class="num">${short(Yr.close)}</span></div><div class="r"><span>Paid to client so far</span><span class="num up">${short(Yr.cum)}</span></div>`:`<h4>Start</h4><div class="r t"><span>Lumpsum invested</span><span class="num">${short(C.L)}</span></div>`;
+    tip.hidden=false;placeTip(tip,cx(y)/W)};
+  svg.addEventListener('pointermove',move);svg.addEventListener('pointerdown',move);
+  svg.addEventListener('pointerleave',()=>{tip.hidden=true;svg.querySelectorAll('.bar').forEach(el=>el.style.opacity=1)});
+}
+const sOpen=new Set();
+function sdrawTable(C){
+  $('s-tsub').textContent=(C.mon?'The monthly amount is reset at the start of each year from the value of the funds. Open a year to see its 12 months.':'One withdrawal at the end of each year, reset each year from the value of the funds.')+(TAX?` Tax: ${C.rate}% on the gains part of withdrawals from year 2, after the first ${short(C.EX)} of gains each year; bond interest at ${C.slab}% slab every year as it is earned.`:'');
+  let h=`<tr><th>Year</th><th>Period</th><th>Age</th><th>Invested at start</th><th>Growth</th><th>${C.mon?'Monthly withdrawal':'Yearly withdrawal'}</th><th>Taken in the year</th>${TAX?`<th>Tax</th><th>${C.mon?'Monthly in hand':'In hand'}</th>`:''}<th>Value after withdrawal</th><th>Paid so far</th></tr>`;
+  C.years.forEach(Y=>{const op=sOpen.has(Y.y);
+    h+=`<tr class="yr${Y.wd<Y.due-0.5?' short':''}"><td>${C.mon?`<button type="button" class="yt" data-syr="${Y.y}" aria-expanded="${op}">${op?'▾':'▸'} Year ${Y.y}</button>`:`Year ${Y.y}`}</td><td>${C.mon?`${Y.from} to ${Y.to}`:Y.from.replace('Year ','')}</td><td>${Y.age}</td><td>${short(Y.open)}</td><td class="g">${short(Y.growth)}</td><td><b>${short(Y.per)}</b></td><td>${short(Y.wd)}${Y.wd<Y.due-0.5?' <span class="pill-warn">short</span>':''}</td>${TAX?`<td class="tx">${Y.tax?short(Y.tax):'–'}</td><td><b>${short(Y.perNet)}</b></td>`:''}<td><b>${short(Y.close)}</b></td><td class="g">${short(Y.cum)}</td></tr>`;
+    if(C.mon&&op) Y.rows.forEach(r=>{h+=`<tr class="mo"><td></td><td>${r.label}</td><td></td><td>${short(r.open)}</td><td class="g">${short(r.growth)}</td><td>${short(r.take)}</td><td></td>${TAX?`<td class="tx">${r.tax?short(r.tax):'–'}</td><td>${short(r.net)}</td>`:''}<td>${short(r.close)}</td><td class="g">${short(r.cum)}</td></tr>`});
+  });
+  if(C.L&&TAX) h+=`<tr class="taxrow"><td colspan="11">Tax over ${C.n} years: <b class="tx">${short(C.taxT)}</b>${C.slabT?` (${short(C.slabT)} of it on bond interest)`:''}. If the remaining <b>${short(C.end)}</b> is fully withdrawn at the end: gain <b class="up">${short(C.exitGain)}</b> (${short(Math.min(C.exRem,Math.max(0,C.exitGain)))} of it covered by what is left of that year's exemption), tax at ${C.rate}% <b class="tx">${short(C.exitTax)}</b>, in hand <b>${short(C.exitNet)}</b>.</td></tr>`;
+  $('s-ytable').innerHTML=h;
+}
+/* events */
+const snum=(v,a,b,d)=>{const x=parseFloat(v);return isNaN(x)?d:clamp(x,a,b)};
+$('s-name').addEventListener('input',e=>{SW.name=e.target.value;srefresh()});
+$('s-by').addEventListener('input',e=>{SW.by=e.target.value;spersist()});
+$('s-age').addEventListener('input',e=>{SW.age=Math.round(snum(e.target.value,1,100,SW.age));srefresh()});
+$('s-lump').addEventListener('input',e=>{const v=parseAmt(e.target.value);SW.lump=isNaN(v)?0:v;srefresh()});
+$('s-lump').addEventListener('blur',e=>{e.target.value=SW.lump?nf.format(Math.round(SW.lump)):''});
+const ssetYears=v=>{SW.years=v;$('s-years').value=v;$('s-years-r').value=v;sOpen.clear();srefresh()};
+$('s-years-r').addEventListener('input',e=>ssetYears(+e.target.value));
+$('s-years').addEventListener('change',e=>ssetYears(Math.round(snum(e.target.value,1,30,SW.years))));
+$('s-start').addEventListener('change',e=>{if(/^\d{4}-\d{2}$/.test(e.target.value)){SW.start=e.target.value;srefresh()}});
+$('s-rate').addEventListener('input',e=>{SW.rate=snum(e.target.value,0,50,0);srefresh()});
+$('s-tax').addEventListener('input',e=>{SW.tax=snum(e.target.value,0,40,0);srefresh()});
+$('s-slab').addEventListener('input',e=>{SW.slab=snum(e.target.value,0,45,0);srefresh()});
+$('s-ex').addEventListener('input',e=>{const v=parseAmt(e.target.value||'0');SW.exempt=isNaN(v)?0:v;srefresh()});
+$('s-ex').addEventListener('blur',e=>{e.target.value=nf.format(Math.round(SW.exempt||0))});
+$('s-inc').addEventListener('input',e=>{SW.inc=snum(e.target.value,0,20,0);srefresh()});
+$('s-freq').addEventListener('click',e=>{const b=e.target.closest('[data-sf]');if(b){SW.freq=b.dataset.sf;srefresh()}});
+$('s-ytable').addEventListener('click',e=>{const b=e.target.closest('[data-syr]');if(!b)return;const y=+b.dataset.syr;sOpen.has(y)?sOpen.delete(y):sOpen.add(y);sdrawTable(scompute())});
+$('s-table').addEventListener('input',e=>{const tr=e.target.closest('[data-sid]');if(!tr)return;const f=SW.funds.find(x=>x.id===tr.dataset.sid),k=e.target.dataset.sf2;if(!f||!k)return;
+  if(k==='name'||k==='cat')f[k]=e.target.value;
+  else if(k==='type'){f.type=e.target.value;f.cat=CAT_DEF[f.type];srenderTable();}
+  else f[k]=snum(e.target.value,0,k==='w'?100:40,0);
+  srefresh()});
+$('s-table').addEventListener('click',e=>{const d=e.target.closest('[data-sdel]');if(d){SW.funds=SW.funds.filter(f=>f.id!==d.dataset.sdel);srenderTable();srefresh()}});
+document.querySelectorAll('[data-sadd]').forEach(b=>b.addEventListener('click',()=>{if(SW.funds.length>=8){toast('Up to 8 funds can be added.');return}
+  const t=b.dataset.sadd,f={id:'s'+sseq++,type:t,name:'',cat:CAT_DEF[t],w:0,r:t==='bond'?7.5:t==='sif'?10:9};SW.funds.push(f);srenderTable();srefresh();$(f.id+'-n').focus()}));
+
+/* exports */
+const sfile=()=>(SW.name.trim()||'Client').replace(/[^\w\- ]+/g,'').trim().replace(/\s+/g,'_')+'_SWP_Plan_'+SW.years+'Y';
+function sPieImage(C){const px=800,c=document.createElement('canvas');c.width=c.height=px;const g=c.getContext('2d'),O=px/2,R0=px*.46;g.fillStyle='#fff';g.fillRect(0,0,px,px);
+  let a=-Math.PI/2;const sl=C.funds.filter(f=>f.share>0).map(f=>{const o={f,a0:a,a1:a+f.share*Math.PI*2};a=o.a1;return o});
+  sl.forEach(o=>{g.beginPath();g.moveTo(O,O);g.arc(O,O,R0,o.a0,o.a1);g.closePath();g.fillStyle=SHEX[o.f.i%SHEX.length];g.fill();g.lineWidth=7;g.strokeStyle='#fff';g.lineJoin='round';g.stroke()});
+  sl.forEach(o=>{if(o.f.share<.05)return;const m=(o.a0+o.a1)/2,t=Math.round(o.f.share*100)+'%',x=O+R0*.62*Math.cos(m),y=O+R0*.62*Math.sin(m);g.font='600 40px Helvetica, Arial, sans-serif';g.textAlign='center';g.textBaseline='middle';g.lineWidth=6;g.strokeStyle='rgba(0,0,0,.35)';g.strokeText(t,x,y);g.fillStyle='#fff';g.fillText(t,x,y)});
+  return c.toDataURL('image/png')}
+function sPdf(){
+  if(!window.jspdf){toast('The PDF library did not load. Check the internet connection and reload.');return}
+  const C=scompute(),n=C.n,doc=new window.jspdf.jsPDF({unit:'mm',format:'a4'}),PW=210,M=14,ink=[20,20,20],mut=[92,92,92],line=[232,230,225],green=[30,138,76],greenT=[232,245,238],gold=[138,90,0],tint=[255,248,229],invC=[107,113,120],amber=[176,96,0];
+  const rs=v=>short(v,'Rs '),rgb=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16)),nm=SW.name.trim()||'Client',per=C.mon?'a month':'a year';
+  const base={theme:'plain',margin:{left:M,right:M,top:34,bottom:22},styles:{font:'helvetica',fontSize:8.8,fillColor:[255,255,255],cellPadding:{top:2.4,bottom:2.4,left:2,right:2},textColor:ink,lineColor:line,lineWidth:{bottom:.1},halign:'right'},headStyles:{fillColor:[255,255,255],textColor:mut,fontStyle:'bold',fontSize:7.5}};
+  const head2=(t,sub)=>{doc.setFillColor(255,167,0);doc.rect(0,0,doc.internal.pageSize.getWidth(),3,'F');doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(...mut);doc.text(`SWP INCOME PLAN  ·  ${nm.toUpperCase()}`,M,11,{charSpace:.4});
+    doc.setFont('times','bold');doc.setFontSize(18);doc.setTextColor(...ink);doc.text(t,M,21);doc.setFillColor(...green);doc.rect(M,24,18,.9,'F');if(sub){doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(...mut);doc.text(sub,M+22,24.8)}doc.setFillColor(255,255,255)};
+  /* page 1: overview */
+  doc.setFillColor(255,167,0);doc.rect(0,0,PW,3,'F');
+  doc.setTextColor(...mut);doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.text('SWP INCOME PLAN',M,14,{charSpace:.6});
+  doc.setTextColor(...ink);doc.setFont('times','bold');doc.setFontSize(24);doc.text(doc.splitTextToSize(nm,110)[0],M,27);
+  doc.setFont('helvetica','normal');doc.setFontSize(10.5);doc.setTextColor(...mut);doc.text(`Age ${SW.age} today   |   ${n}-year plan   |   First withdrawal ${sMonthLabel(0)}`,M,35);doc.text(`${today()}${SW.by?'   |   Prepared by '+SW.by:''}`,M,41.5);
+  doc.setFontSize(8.5);doc.text(C.mon?'MONTHLY INCOME, YEAR 1':'YEARLY INCOME, YEAR 1',PW-M,14,{align:'right'});doc.setTextColor(...ink);doc.setFont('times','bold');doc.setFontSize(30);doc.text(rs(C.first),PW-M,29,{align:'right'});
+  doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(...(C.out?amber:green));doc.text(C.out?`Money runs out in ${C.out.label}`:`Lasts all ${n} years`,PW-M,37,{align:'right'});
+  let y=50;const tiles=[['Lumpsum invested',rs(C.L)],...(TAX?[]:[['Withdrawal rate',(+SW.rate||0)+'% a year']]),[C.mon?`Monthly, year ${n}`:`Yearly, year ${n}`,rs(C.last)],['Paid to client',rs(C.cum),1],...(TAX?[['Tax over the plan',rs(C.taxT)]]:[]),['Value left at end',rs(C.end)]];
+  const tw=(PW-2*M-4*3)/5;tiles.forEach((t,i)=>{const x=M+i*(tw+3);doc.setFillColor(...(t[2]?greenT:[255,255,255]));doc.setDrawColor(...(t[2]?[180,220,196]:line));doc.roundedRect(x,y,tw,17,2,2,'FD');
+    doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.setTextColor(...(t[2]?green:mut));doc.text(t[0],x+3,y+6);doc.setFont('helvetica','bold');doc.setFontSize(11);doc.setTextColor(...(t[2]?green:ink));doc.text(t[1],x+3,y+13)});
+  y+=25;doc.setFillColor(...tint);doc.setDrawColor(255,230,166);doc.roundedRect(M,y,PW-2*M,17,2,2,'FD');doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(...ink);
+  doc.text(doc.splitTextToSize(`From ${rs(C.L)}, ${nm} receives ${rs(C.first)} ${per} in year 1${n>1?`, ${C.last>=C.first?'rising':'changing'} to ${rs(C.last)} ${per} by year ${n} as the funds' value changes`:''}. Over ${n} years that is ${rs(C.cum)} paid out, with ${rs(C.end)} still invested at the end.${TAX&&C.taxT>0?` From year 2, after tax, about ${rs(C.net2)} ${per} reaches the client.`:''}`,PW-2*M-8),M+4,y+6);
+  y+=27;doc.setFont('helvetica','bold');doc.setFontSize(12);doc.setTextColor(...ink);doc.text('Value and income over time',M,y);doc.setFillColor(...green);doc.rect(M,y+2,12,.7,'F');y+=9;
+  doc.setFontSize(9);let lx=M;[[invC,'Value still invested'],[green,'Paid to client so far']].forEach(([c,t])=>{doc.setFillColor(...c);doc.rect(lx,y-2.8,3.2,3.2,'F');doc.setFont('helvetica','normal');doc.setTextColor(...mut);doc.text(t,lx+5,y);lx+=doc.getTextWidth(t)+12});
+  doc.setDrawColor(...ink);doc.setLineWidth(.5);doc.setLineDashPattern([1.5,1.2],0);doc.line(lx,y-1,lx+7,y-1);doc.setLineDashPattern([],0);doc.text('Lumpsum',lx+9,y);
+  y+=6;const cx=M+18,cw=PW-M-cx,ch=95,tops=[C.L,...C.years.map(Y=>Y.close+Y.cum)],max=niceMax(Math.max(...tops)*1.04),py=v=>y+ch*(1-v/max);
+  doc.setLineWidth(.15);doc.setDrawColor(...line);doc.setFontSize(7.5);doc.setTextColor(...mut);
+  for(let i=0;i<=4;i++){const v=max*i/4;doc.line(cx,py(v),cx+cw,py(v));doc.text(i?rs(v):'0',cx-2,py(v)+1,{align:'right'})}
+  const slot=cw/(n+1),bw=Math.min(slot*.64,13);
+  for(let k=0;k<=n;k++){const val=k?C.years[k-1].close:C.L,cum=k?C.years[k-1].cum:0,bx=cx+slot*(k+.5)-bw/2,yv=py(val),yc=py(val+cum),y0=py(0);
+    doc.setFillColor(...invC);doc.rect(bx,yv,bw,y0-yv,'F');if(yv-yc>.6){doc.setFillColor(...green);doc.rect(bx,yc,bw,yv-yc-.5,'F')}
+    if(n<=12||k===n||k%2===0){doc.setFont('helvetica','bold');doc.setFontSize(n>10?6.2:7);doc.setTextColor(...ink);doc.text(short(val,''),bx+bw/2,yc-1.5,{align:'center'});doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.setTextColor(...mut);doc.text(k?'Yr '+k:'Start',bx+bw/2,y+ch+4,{align:'center'})}}
+  doc.setDrawColor(...ink);doc.setLineWidth(.4);doc.setLineDashPattern([1.5,1.2],0);doc.line(cx,py(C.L),cx+cw,py(C.L));doc.setLineDashPattern([],0);
+  doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.setTextColor(...mut);doc.text('Amounts above each bar are the value still invested, in Rs (L = lakh, Cr = crore).',M,y+ch+10);
+  /* page 2: where it is invested */
+  doc.addPage();head2('Where the lumpsum is invested','Each fund, its share and expected return');
+  const pd=62;doc.addImage(sPieImage(C),'PNG',M,32,pd,pd);
+  let ly=38;doc.setFontSize(9);C.funds.filter(f=>f.share>0).forEach(f=>{doc.setFillColor(...rgb(SHEX[f.i%SHEX.length]));doc.rect(M+pd+10,ly-2.8,3.2,3.2,'F');doc.setFont('helvetica','normal');doc.setTextColor(...ink);doc.text(doc.splitTextToSize(f.name||STYPES[f.type],80)[0],M+pd+16,ly);doc.setFont('helvetica','bold');doc.text((f.share*100).toFixed(1)+'%',PW-M,ly,{align:'right'});ly+=7});
+  const fl=C.funds.filter(f=>f.share>0),fb=fl.map(f=>[f.name||'(unnamed)',STYPES[f.type],f.cat,(f.share*100).toFixed(1)+'%',(+f.r).toFixed(2).replace(/\.?0+$/,'')+'%',rs(f.amt),rs(f.per1),rs(f.end)]);
+  fb.push([{content:'Total',styles:{fontStyle:'bold',halign:'left'}},'','',{content:'100%',styles:{fontStyle:'bold'}},{content:C.wret.toFixed(1)+'%',styles:{fontStyle:'bold'}},{content:rs(C.L),styles:{fontStyle:'bold'}},{content:rs(C.first),styles:{fontStyle:'bold'}},{content:rs(C.end),styles:{fontStyle:'bold'}}]);
+  doc.autoTable(Object.assign({},base,{startY:Math.max(32+pd,ly)+8,head:[['Fund or bond','Type','Category','Share','Expected return','Invested',C.mon?'Monthly withdrawal, year 1':'Yearly withdrawal, year 1','Value at end']],body:fb,
+    columnStyles:{0:{halign:'left',cellWidth:38},1:{halign:'left'},2:{halign:'left',cellWidth:32},4:{textColor:gold,fontStyle:'bold'},6:{textColor:green}},
+    didParseCell:d=>{if(d.section==='head')d.cell.styles.halign=d.column.index<3?'left':'right'},
+    didDrawCell:d=>{if(d.section==='body'&&d.column.index===0&&d.row.index<fl.length){doc.setFillColor(...rgb(SHEX[fl[d.row.index].i%SHEX.length]));doc.rect(d.cell.x-2.5,d.cell.y+d.cell.height/2-1.3,2.6,2.6,'F');doc.setFillColor(255,255,255)}},
+    margin:Object.assign({},base.margin,{left:M+3})}));
+  y=doc.lastAutoTable.finalY+8;doc.setFont('helvetica','bold');doc.setFontSize(12);doc.setTextColor(...ink);doc.text('Withdrawal',M,y);doc.setFillColor(...green);doc.rect(M,y+2,12,.7,'F');
+  doc.autoTable(Object.assign({},base,{startY:y+5,theme:'plain',body:[['Withdrawal rate',`${SW.rate}% a year`],['Mutual funds and SIFs',`${SW.rate}% of their value at the start of each year, so the income moves with the value`],['Bonds',`${SW.rate}% of the amount invested in them${+SW.inc?`, raised ${SW.inc}% a year`:''}`],['Paid out',C.mon?'Monthly, at the end of each month':'Yearly, at the end of each year'],['Amount in year 1',`${rs(C.yr1)} a year${C.mon?` (${rs(C.first)} a month)`:''}`],[`Amount in year ${n}`,`${rs(C.last*C.p)} a year${C.mon?` (${rs(C.last)} a month)`:''}`],['First withdrawal',sMonthLabel(C.mon?0:11)]],
+    columnStyles:{0:{halign:'left',textColor:mut,cellWidth:50},1:{halign:'left',fontStyle:'bold'}}}));
+  /* page 3: year by year (landscape so every column fits) */
+  doc.addPage('a4','landscape');head2('Year by year','Invested amount, withdrawal taken and value left after each year');
+  const yb=C.years.map(Y=>[`Year ${Y.y}`,C.mon?`${Y.from}–${Y.to}`.replace('–',' to '):'',String(Y.age),rs(Y.open),rs(Y.growth),rs(Y.per),rs(Y.wd),...(TAX?[Y.tax?rs(Y.tax):'-',rs(Y.perNet)]:[]),rs(Y.close)]);
+  doc.autoTable(Object.assign({},base,{startY:34,head:[['Year','Period','Age','Invested at start','Growth',C.mon?'Monthly withdrawal':'Yearly withdrawal','Taken in the year',...(TAX?['Tax',C.mon?'Monthly in hand':'In hand']:[]),'Value after withdrawal']],body:yb,
+    styles:Object.assign({},base.styles,{fontSize:8.6,cellPadding:{top:2.4,bottom:2.4,left:2,right:2}}),columnStyles:{0:{halign:'left',fontStyle:'bold'},1:{halign:'left',cellWidth:42},4:{textColor:green},5:{fontStyle:'bold'},...(TAX?{7:{textColor:[179,38,30]},8:{fontStyle:'bold'},9:{fontStyle:'bold'}}:{7:{fontStyle:'bold'}})},
+    didParseCell:d=>{if(d.section==='head')d.cell.styles.halign=d.column.index<2?'left':'right'},didDrawPage:()=>head2('Year by year','Invested amount, withdrawal taken and value left after each year')}));
+  if(TAX){const PWL=doc.internal.pageSize.getWidth();let ty=doc.lastAutoTable.finalY+8;if(ty>doc.internal.pageSize.getHeight()-60){doc.addPage('a4','landscape');head2('Tax');ty=34}
+    doc.setFont('helvetica','bold');doc.setFontSize(12);doc.setTextColor(...ink);doc.text('Tax',M,ty);doc.setFillColor(...green);doc.rect(M,ty+2,12,.7,'F');ty+=7;
+    const items=[['Tax over the plan',rs(C.taxT),[179,38,30]],['Paid to client after tax',rs(C.netT),green],['Value left at end',rs(C.end),ink],[`Tax if fully exited`,rs(C.exitTax),[179,38,30]],['In hand on full exit',rs(C.exitNet),ink]],bw=(PWL-2*M-4*3)/5;
+    items.forEach((t,i)=>{const x=M+i*(bw+3);doc.setFillColor(255,255,255);doc.setDrawColor(...line);doc.roundedRect(x,ty,bw,16,2,2,'FD');doc.setFont('helvetica','normal');doc.setFontSize(7.3);doc.setTextColor(...mut);doc.text(t[0],x+3,ty+6);doc.setFont('helvetica','bold');doc.setFontSize(10.5);doc.setTextColor(...t[2]);doc.text(t[1],x+3,ty+12.5)});
+    doc.setFont('helvetica','normal');doc.setFontSize(7.4);doc.setTextColor(...mut);
+    doc.text(doc.splitTextToSize(`Tax is ${C.rate}% long-term capital gains tax on the gains part of each withdrawal from year 2, worked out on average cost; year 1 is shown without capital gains tax. Bond interest is taxed at ${C.slab}% slab every year as it is earned${C.slabT?` (${rs(C.slabT)} over the plan)`:''}, with no exemption. Each year the first ${rs(C.EX)} of gains is exempt (Section 112A), so tax starts once a year's gains pass it. "If fully exited" sells everything left at the end of year ${n}: gain ${rs(C.exitGain)}, with ${rs(Math.min(C.exRem,Math.max(0,C.exitGain)))} covered by what is left of that year's exemption. Debt funds bought after 1 April 2023 are also taxed at slab rates; check with a tax adviser.`,PWL-2*M),M,ty+22)}
+  /* monthly: one page per year */
+  if(C.mon) C.years.forEach(Y=>{
+    doc.addPage('a4','portrait');head2(`Year ${Y.y}: monthly withdrawals`,`${Y.from} to ${Y.to}  ·  age ${Y.age}`);
+    const mb=Y.rows.map(r=>[r.label,rs(r.open),rs(r.growth),rs(r.take),...(TAX?[r.tax?rs(r.tax):'-',rs(r.net)]:[]),rs(r.close)]);
+    doc.autoTable(Object.assign({},base,{startY:34,head:[['Month','Value at start of month','Growth','Withdrawal paid',...(TAX?['Tax','In hand']:[]),'Value after withdrawal']],body:mb,
+      columnStyles:{0:{halign:'left',fontStyle:'bold'},2:{textColor:green},3:{fontStyle:'bold'},...(TAX?{4:{textColor:[179,38,30]},5:{fontStyle:'bold'}}:{})},didParseCell:d=>{if(d.section==='head')d.cell.styles.halign=d.column.index?'right':'left'}}));
+    let by=doc.lastAutoTable.finalY+8;const bw2=(PW-2*M-2*4)/3;
+    [['Invested at start of year',rs(Y.open),0],[`Withdrawal taken (${rs(Y.per)} a month)`,rs(Y.wd),0],['Current value after withdrawals',rs(Y.close),1]].forEach((t,i)=>{const x=M+i*(bw2+4);
+      doc.setFillColor(...(t[2]?greenT:tint));doc.setDrawColor(...(t[2]?[180,220,196]:[255,230,166]));doc.roundedRect(x,by,bw2,20,2,2,'FD');
+      doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(...(t[2]?green:mut));doc.text(t[0],x+4,by+7);doc.setFont('helvetica','bold');doc.setFontSize(14);doc.setTextColor(...(t[2]?green:ink));doc.text(t[1],x+4,by+15.5)});
+    doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(...mut);doc.text(`Growth in the year ${rs(Y.growth)}   ·   ${TAX?`Tax this year ${Y.tax?rs(Y.tax):'none'}   ·   In hand this year ${rs(Y.net)}   ·   `:''}Paid to client so far ${rs(Y.cum)}`,M,by+28);
+  });
+  const disc='Illustration only. Withdrawals and values use the expected returns shown and are not a guarantee or forecast. Actual returns may be lower or negative, and the money may run out sooner. Figures are before taxes, exit loads and fees. Investments in mutual funds, SIFs and bonds are subject to market risks; read all scheme and offer documents carefully.';
+  const pages=doc.getNumberOfPages();for(let p=1;p<=pages;p++){doc.setPage(p);const w=doc.internal.pageSize.getWidth(),fy=doc.internal.pageSize.getHeight()-14;doc.setDrawColor(...line);doc.setLineWidth(.2);doc.line(M,fy-4,w-M,fy-4);doc.setFont('helvetica','normal');doc.setFontSize(6.8);doc.setTextColor(...mut);doc.text(doc.splitTextToSize(disc,w-2*M-16),M,fy);doc.text(`${p} / ${pages}`,w-M,fy,{align:'right'})}
+  return saveFile(sfile()+'.pdf',doc.output('arraybuffer'));
+}
+function sXlsx(){
+  if(!window.XLSX){toast('The Excel library did not load. Check the internet connection and reload.');return}
+  const X=window.XLSX,C=scompute(),n=C.n,p=C.p,Z='#,##0',col=X.utils.encode_col,num=(v,f,z=Z)=>{const c={t:'n',v:isFinite(v)?Math.round(v*100)/100:0,z};if(f)c.f=f;return c},pc=(v,f)=>num(v,f,'0.00'),txt=v=>({t:'s',v:String(v??'')});
+  const k=SW.funds.length,ff=14,fl=ff+k-1,ft=fl+1,SH="'Schedule'!",SP="'SWP'!",S0=6,FC=8;
+  /* Schedule: one row per withdrawal. Each fund grows, then pays its own share: funds and SIFs pay the rate on their value at the start of the year, bonds on the amount invested. */
+  const flat=[];C.years.forEach(Y=>Y.rows.forEach(r=>flat.push(Object.assign({y:Y.y},r))));
+  const sc=[[txt(`Withdrawal schedule (${C.mon?'monthly':'yearly'})`)],[txt('Funds and SIFs pay the withdrawal % of their value at the start of each year; bonds pay it on the amount invested in them. Every cell is a formula linked to the SWP sheet.')],[],[],
+    [txt('Period'),txt('Year'),txt(C.mon?'Month':'Period'),txt('Value at start (₹)'),txt('Growth (₹)'),txt('Withdrawal due (₹)'),txt('Withdrawal taken (₹)'),txt('Value after withdrawal (₹)'),...SW.funds.map(f=>txt((f.name||STYPES[f.type])+' (₹)')),...SW.funds.map(f=>txt('Cost left: '+(f.name||STYPES[f.type])+' (₹)')),txt('Gain in withdrawal (₹)'),txt('Tax (₹)'),txt('In hand (₹)'),txt('Gain so far this year (₹)'),txt('Bond interest earned, taxed at slab (₹)')]];
+  // cached values from a replay of the same rules
+  const rate=(+SW.rate||0)/100,inc=(+SW.inc||0)/100,start=C.funds.map(f=>f.amt);let v=start.slice(),perY=[],cst=start.slice(),cgx=0;const CC=FC+k,GC=FC+2*k,CG=GC+3;
+  flat.forEach((r,j)=>{const x=S0+j,yr=r.y,firstOfYear=S0+(yr-1)*p,
+      prev=i=>j===0?`${SP}$F$${ff+i}`:`${col(FC+i)}${x-1}`,
+      soy=i=>yr===1?`${SP}$F$${ff+i}`:`${col(FC+i)}$${firstOfYear-1}`,
+      grown=i=>`${prev(i)}*(1+${SP}$E$${ff+i}/100/${p})`,
+      per=i=>`IF(${SP}$A$${ff+i}="Bond",${SP}$F$${ff+i}*(1+${SP}$B$8/100)^(B${x}-1),${soy(i)})*${SP}$B$6/100/${p}`;
+    if((j%p)===0) perY=v.map((val,i)=>(SW.funds[i].type==='bond'?start[i]*Math.pow(1+inc,yr-1):val)*rate/p);
+    const grownV=v.map((val,i)=>val*(1+(+SW.funds[i].r||0)/100/p));v=grownV.map((g,i)=>Math.max(0,g-perY[i]));
+    const vPrev=grownV.map((g,i)=>g/(1+(+SW.funds[i].r||0)/100/p));cst=cst.map((c,i)=>{const add=SW.funds[i].type==='bond'?grownV[i]-vPrev[i]:0;return grownV[i]>0?(c+add)*v[i]/grownV[i]:0});
+    const pcost=i=>j===0?`${SP}$F$${ff+i}`:`${col(CC+i)}${x-1}`,bI=i=>`IF(${SP}$A$${ff+i}="Bond",${grown(i)}-${prev(i)},0)`,BIC=col(CG+1);
+    sc.push([num(j+1,null,'0'),num(yr,null,'0'),txt(r.label),num(r.open,SW.funds.map((_,i)=>prev(i)).join('+')||'0'),
+      num(r.growth,`(${SW.funds.map((_,i)=>grown(i)).join('+')||0})-D${x}`),num(r.due,SW.funds.map((_,i)=>per(i)).join('+')||'0'),
+      num(r.take,`D${x}+E${x}-H${x}`),num(r.close,k?`SUM(${col(FC)}${x}:${col(FC+k-1)}${x})`:'0'),
+      ...SW.funds.map((_,i)=>num(v[i],`MAX(0,${grown(i)}-${per(i)})`)),
+      ...SW.funds.map((_,i)=>num(cst[i],`IF(${grown(i)}=0,0,(${pcost(i)}+${bI(i)})*${col(FC+i)}${x}/(${grown(i)}))`)),
+      num(r.gain,`G${x}-((${SW.funds.map((_,i)=>pcost(i)).join('+')||0})+${BIC}${x}-SUM(${col(CC)}${x}:${col(CC+k-1)}${x}))`),
+      num(r.tax,`IF(B${x}>=2,(MAX(0,${col(CG)}${x}-${SP}$D$10)-MAX(0,${col(CG)}${x}-MAX(0,${col(GC)}${x})-${SP}$D$10))*${SP}$B$10/100,0)+${BIC}${x}*${SP}$F$10/100`),num(r.net,`G${x}-${col(GC+1)}${x}`),
+      num((cgx=(j%p===0?0:cgx)+Math.max(0,r.gain)),j%p===0?`MAX(0,${col(GC)}${x})`:`${col(CG)}${x-1}+MAX(0,${col(GC)}${x})`),num(r.bondI,SW.funds.map((_,i)=>bI(i)).join('+')||'0')]);
+  });
+  const SL=S0+flat.length-1;
+  if(!TAX) sc.forEach((r,i)=>{if(r.length>FC+k)sc[i]=r.slice(0,FC+k)}); // tax columns only when tax is included
+  const wsS=X.utils.aoa_to_sheet(sc);wsS['!cols']=[{wch:8},{wch:6},{wch:12},{wch:18},{wch:16},{wch:18},{wch:18},{wch:22},...SW.funds.map(()=>({wch:22})),...SW.funds.map(()=>({wch:26})),{wch:18},{wch:14},{wch:16},{wch:20},{wch:24}];
+  /* SWP sheet: inputs, funds, yearly summary */
+  const yh=ft+2,last=yh+n;
+  const a=[[txt('SWP income plan')],[txt('Change the values in column B (rows 4 to 10) and the type, share and return columns of the fund table. Everything else is a formula.')],
+    [txt('Client'),txt(SW.name)],[txt('Lumpsum for SWP (₹)'),num(C.L)],[txt('Time frame (years)'),num(n,null,'0')],[txt('Withdrawal (% a year): funds and SIFs on their value, bonds on the amount invested'),pc(+SW.rate||0)],
+    [txt('Paid out'),txt(C.mon?'Monthly':'Yearly')],[txt('Raise the bond withdrawal each year by (%)'),pc(+SW.inc||0)],[txt('Age today'),num(+SW.age||0,null,'0')],[txt('Long-term capital gains tax on the gains part of withdrawals, from year 2 (%)'),pc(+SW.tax||0),txt('Yearly exemption on gains (₹)'),num(C.EX),txt('Income slab rate for bond interest (%)'),pc(C.slab)],
+    [txt('Results'),txt(''),txt('Tax over the plan, incl. bond interest (₹)'),num(C.taxT,`SUM(I${yh+1}:I${last})`),txt('Tax if fully exited at the end (₹)'),num(C.exitTax,`MAX(0,${SH}H${SL}-SUM(${SH}${col(CC)}${SL}:${col(CC+k-1)}${SL})-MAX(0,$D$10-${SH}${col(CG)}${SL}))*$B$10/100`),txt('In hand on full exit (₹)'),num(C.exitNet,`H12-F11`)],
+    [txt(C.mon?'Monthly income, year 1 (₹)':'Yearly income, year 1 (₹)'),num(C.first,`${SH}F${S0}`),txt(C.mon?`Monthly income, year ${n} (₹)`:`Yearly income, year ${n} (₹)`),num(C.last,`${SH}F${S0+(n-1)*p}`),txt('Total paid to client (₹)'),num(C.cum,`G${last}`),txt('Value left at the end (₹)'),num(C.end,`F${last}`)],
+    [txt('Type (Mutual Fund, SIF or Bond)'),txt('Fund or bond'),txt('Category'),txt('Share (%)'),txt('Expected return (% p.a.)'),txt('Amount invested (₹)'),txt(C.mon?'Monthly withdrawal, year 1 (₹)':'Yearly withdrawal, year 1 (₹)'),txt('Value at end (₹)')]];
+  SW.funds.forEach((f,i)=>{const x=ff+i,fr=C.funds[i];a.push([txt(STYPES[f.type]),txt(f.name),txt(f.cat),pc(+f.w||0),pc(+f.r||0),
+    num(fr.amt,`IF(SUM($D$${ff}:$D$${fl})=0,0,$B$4*D${x}/SUM($D$${ff}:$D$${fl}))`),num(fr.per1,`F${x}*$B$6/100/${p}`),num(fr.end,`${SH}${col(FC+i)}${SL}`)])});
+  a.push([txt('Total'),txt(''),txt(''),pc(C.ws,`SUM(D${ff}:D${fl})`),pc(C.wret,`IF(D${ft}=0,0,SUMPRODUCT(D${ff}:D${fl},E${ff}:E${fl})/D${ft})`),num(C.L,`SUM(F${ff}:F${fl})`),num(C.first,`SUM(G${ff}:G${fl})`),num(C.end,`SUM(H${ff}:H${fl})`)]);
+  a.push([]);
+  a.push([txt('Year'),txt('Age'),txt('Invested at start of year (₹)'),txt('Growth in the year (₹)'),txt(C.mon?'Monthly withdrawal (₹)':'Yearly withdrawal (₹)'),txt('Value after withdrawal (₹)'),txt('Paid to client so far (₹)'),txt('Withdrawal taken in the year (₹)'),txt('Tax in the year (₹)'),txt('In hand in the year (₹)')]);
+  C.years.forEach((Y,j)=>{const x=yh+1+j,r0=S0+j*p,r1=r0+p-1;
+    a.push([num(Y.y,null,'0'),num(Y.age,`$B$9+A${x}`,'0'),num(Y.open,`${SH}D${r0}`),num(Y.growth,`SUM(${SH}E${r0}:E${r1})`),num(Y.per,`${SH}F${r0}`),num(Y.close,`${SH}H${r1}`),num(Y.cum,j?`G${x-1}+H${x}`:`H${x}`),num(Y.wd,`SUM(${SH}G${r0}:G${r1})`),num(Y.tax,`SUM(${SH}${col(GC+1)}${r0}:${col(GC+1)}${r1})`),num(Y.net,`H${x}-I${x}`)])});
+  a.push([],[txt(`The schedule has ${flat.length} ${C.mon?'monthly':'yearly'} rows, set when this file was made. Changing the time frame or payout frequency needs a new file from the tool.`)],[txt('Illustration only. Figures are before taxes, exit loads and fees. Not a guarantee or forecast.')]);
+  if(!TAX){a[9]=[];a[10]=[txt('Results')];a.forEach((r,i)=>{if(i>=yh-1&&r.length>8)a[i]=r.slice(0,8)})}
+  const wsA=X.utils.aoa_to_sheet(a);wsA['!cols']=[{wch:44},{wch:30},{wch:30},{wch:22},{wch:28},{wch:24},{wch:26},{wch:26},{wch:18},{wch:20}];
+  const wb=X.utils.book_new();X.utils.book_append_sheet(wb,wsA,'SWP');X.utils.book_append_sheet(wb,wsS,'Schedule');
+  return saveFile(sfile()+'.xlsx',X.write(wb,{bookType:'xlsx',type:'array'}));
+}
+['s-pdf','s-pdf2'].forEach(i=>$(i).addEventListener('click',sPdf));
+['s-xlsx','s-xlsx2'].forEach(i=>$(i).addEventListener('click',sXlsx));
+function spersist(){try{localStorage.setItem('wealth-swp-draft',JSON.stringify(SW))}catch(e){}}
+try{const s=JSON.parse(localStorage.getItem('wealth-swp-draft')||'null');if(s&&Array.isArray(s.funds)){SW=Object.assign(sblank(),s);SW.funds.forEach((f,i)=>f.id='s'+(i+1));sseq=SW.funds.length+10}}catch(e){}
+let sReady=false;
+function sroute(){if(!sReady){if(!SW.name&&state.name){SW.name=state.name}sshow();sReady=true}else srefresh()}
+window.addEventListener('hashchange',route);
+route();
+</script>
+
+
+</body>
+</html>
