@@ -9,3 +9,7 @@ An internal planning tool for advisors, in one page (`index.html`):
 Each page exports a PDF and an Excel file. Client details stay in the advisor's browser; nothing is sent to a server.
 
 Hosted with GitHub Pages. To update the site, replace `index.html` and push to `main`.
+
+## Install as an app
+
+On iPhone or iPad: open the site in Safari, tap Share, then Add to Home Screen. On Android: open in Chrome and choose Install app. The app works offline once opened and updates itself when the site changes.
