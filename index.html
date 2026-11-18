@@ -292,6 +292,17 @@ td.g{color:var(--green);font-weight:600}
 .finish .btn.line{background:var(--surface);color:var(--ink);border-color:var(--ink)}
 .disc{color:var(--muted);font-size:13px;max-width:100ch;margin:18px 0 0}
 .thanks{font-family:var(--display);font-size:26px;font-weight:600;text-align:center;margin:36px 0 10px;color:var(--ink)}
+.getapp-wrap{display:flex;justify-content:center;margin:22px 0 0}
+.getapp{text-decoration:none;padding:12px 22px;font-size:15.5px}
+.getapp svg{width:18px;height:18px}
+.appdlg{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:flex-end;justify-content:center;z-index:30;padding:16px}
+@media (min-width:600px){.appdlg{align-items:center}}
+.appdlg .box{background:var(--surface);color:var(--ink);border-radius:16px;padding:22px 22px 18px;max-width:420px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.3);border-top:5px solid var(--chrome)}
+.appdlg h3{font-family:var(--display);font-size:22px;margin:0 0 6px}
+.appdlg p{margin:0 0 12px;color:var(--muted);font-size:15px}
+.appdlg ol{margin:0 0 16px;padding-left:22px;display:grid;gap:10px;font-size:15.5px}
+.appdlg ol svg{width:18px;height:18px;vertical-align:-3px;margin:0 2px}
+.appdlg .acts{display:flex;justify-content:flex-end}
 .powered{text-align:center;font-size:13px;letter-spacing:.04em;color:var(--muted);margin:14px 0 48px}
 .thanks::after{content:"";display:block;width:56px;height:3px;background:var(--chrome);border-radius:2px;margin:12px auto 0}
 #toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:14.5px;z-index:10;max-width:90vw}
@@ -441,6 +452,7 @@ td.g{color:var(--green);font-weight:600}
       </div>
       <p class="disc">Illustration only. These projections apply the expected rates of return shown above and are not a guarantee, assurance or forecast of future performance. Actual returns depend on market conditions and may be lower or negative. Investments in mutual funds, SIFs, portfolio management services, alternative investment funds, private equity, bonds and GIFT City funds are subject to market risks; read all scheme and offer documents carefully. Figures are before taxes, fees and exit loads. Lumpsum values compound annually; bond coupons are paid annually and either paid out or reinvested in the mutual funds listed; monthly investments compound monthly with instalments at the start of each month.</p>
       <p class="thanks">Thank you, Stay invested!</p>
+      <div class="getapp-wrap"><a class="btn gold getapp" href="https://neeldoshi7.github.io/Wealth-planner/" target="_blank" rel="noopener"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="4" y="1.5" width="8" height="13" rx="1.8"/><path d="M8 5v5m0 0L6 8m2 2 2-2"/></svg>Download the app</a></div>
       <p class="powered">Powered by Neel Doshi</p>
     </section>
   </div>
@@ -515,6 +527,7 @@ td.g{color:var(--green);font-weight:600}
       </div>
       <p class="disc">Illustration only. The amounts needed are worked out from the return assumed and are not a guarantee, assurance or forecast of future performance. Actual returns depend on market conditions and may be lower or negative, in which case the target may not be reached. Investments in mutual funds, SIFs, PMS, AIFs, private equity and bonds are subject to market risks; read all scheme and offer documents carefully. Figures are before taxes, fees and exit loads. Lumpsum values compound annually; monthly SIPs compound monthly with instalments at the start of each month. Minimum investment sizes shown are the SEBI minimums for PMS (₹50 L), AIF (₹1 Cr) and SIF (₹10 L); check current rules before advising.</p>
       <p class="thanks">Thank you, Stay invested!</p>
+      <div class="getapp-wrap"><a class="btn gold getapp" href="https://neeldoshi7.github.io/Wealth-planner/" target="_blank" rel="noopener"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="4" y="1.5" width="8" height="13" rx="1.8"/><path d="M8 5v5m0 0L6 8m2 2 2-2"/></svg>Download the app</a></div>
       <p class="powered">Powered by Neel Doshi</p>
     </section>
   </div>
@@ -589,10 +602,14 @@ td.g{color:var(--green);font-weight:600}
       </div>
       <p class="disc">Illustration only. Withdrawals and values are worked out from the expected returns shown and are not a guarantee, assurance or forecast of future performance. Actual returns depend on market conditions and may be lower or negative, in which case the money may run out sooner. Each fund grows at its own expected return, compounding monthly for monthly payouts and yearly for yearly payouts; each year, mutual funds and SIFs pay out the withdrawal % of their value at the start of that year, and bonds pay out the withdrawal % of the amount first invested in them; the yearly amount is paid in equal parts at the end of each month (or once at year end) by each fund. Bond values grow at the yield entered, with coupons kept in the portfolio and taxed as they are earned. Tax is long-term capital gains tax at the rate shown on the gains part of each withdrawal from year 2, worked out on average cost; year 1 withdrawals are shown without tax. Each plan year, the first ₹1.25 L of gains (the Section 112A exemption, editable above) is tax-free, so tax starts once a year's gains pass it; plan years are treated as tax years. Bond interest is taxed at the income slab rate entered, every year as it is earned (including year 1), with no exemption. Debt funds bought after 1 April 2023 are also taxed at slab rates; check with a tax adviser. Figures are before exit loads and fees. Investments in mutual funds, SIFs and bonds are subject to market risks; read all scheme and offer documents carefully.</p>
       <p class="thanks">Thank you, Stay invested!</p>
+      <div class="getapp-wrap"><a class="btn gold getapp" href="https://neeldoshi7.github.io/Wealth-planner/" target="_blank" rel="noopener"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="4" y="1.5" width="8" height="13" rx="1.8"/><path d="M8 5v5m0 0L6 8m2 2 2-2"/></svg>Download the app</a></div>
       <p class="powered">Powered by Neel Doshi</p>
     </section>
   </div>
 </div>
+<div class="appdlg" id="appdlg" hidden role="dialog" aria-modal="true" aria-labelledby="appdlg-t"><div class="box">
+  <h3 id="appdlg-t">Install the app</h3><div id="appdlg-b"></div>
+  <div class="acts"><button class="btn primary" type="button" id="appdlg-x">Done</button></div></div></div>
 <div id="toast" hidden role="status"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -2008,6 +2025,35 @@ window.addEventListener('hashchange',route);
 route();
 </script>
 <script>
+// "Download the app": installs directly where the browser allows it (Android, desktop Chrome/Edge),
+// shows Add to Home Screen steps on iPhone/iPad, and opens the website when used from claude.ai.
+(function(){
+  const hosted=/github\.io$/.test(location.hostname)||location.hostname==='localhost'||(location.protocol==='https:'&&!/claude\.ai|claudeusercontent/.test(location.hostname));
+  const standalone=matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
+  let deferred=null;
+  window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferred=e});
+  window.addEventListener('appinstalled',()=>{deferred=null;document.querySelectorAll('.getapp-wrap').forEach(w=>w.hidden=true);toast('App installed. Find "Wealth Plan" on your home screen.')});
+  if(standalone) document.querySelectorAll('.getapp-wrap').forEach(w=>w.hidden=true);
+  const dlg=document.getElementById('appdlg'),body=document.getElementById('appdlg-b');
+  const share='<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 1.5v9M5 4.5l3-3 3 3"/><path d="M4 7H3v7.5h10V7h-1"/></svg>';
+  function steps(){
+    const ua=navigator.userAgent,ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1),safari=/Safari/.test(ua)&&!/CriOS|FxiOS|EdgiOS|Chrome/.test(ua);
+    if(ios&&!safari) return '<p>On iPhone and iPad the app is added from Safari.</p><ol><li>Copy this page\'s address and open it in <b>Safari</b>.</li><li>Tap <b>Share</b> '+share+' at the bottom of the screen.</li><li>Choose <b>Add to Home Screen</b>, then <b>Add</b>.</li></ol>';
+    if(ios) return '<p>Two taps and it sits on your home screen like any other app.</p><ol><li>Tap <b>Share</b> '+share+' at the bottom of Safari.</li><li>Scroll down and choose <b>Add to Home Screen</b>.</li><li>Tap <b>Add</b>. Open <b>Wealth Plan</b> from your home screen.</li></ol>';
+    if(/Macintosh/.test(ua)&&safari) return '<p>In Safari on Mac:</p><ol><li>Open the <b>File</b> menu.</li><li>Choose <b>Add to Dock</b>.</li></ol>';
+    return '<p>In Chrome or Edge:</p><ol><li>Open the browser menu (⋮ or …).</li><li>Choose <b>Install app</b> or <b>Add to Home screen</b>.</li></ol>';
+  }
+  document.addEventListener('click',async e=>{
+    const a=e.target.closest('.getapp');if(!a)return;
+    if(!hosted) return; // on claude.ai the link opens the website in a new tab
+    e.preventDefault();
+    if(deferred){deferred.prompt();try{await deferred.userChoice}catch(err){}deferred=null;return}
+    body.innerHTML=steps();dlg.hidden=false;document.getElementById('appdlg-x').focus();
+  });
+  document.getElementById('appdlg-x').addEventListener('click',()=>dlg.hidden=true);
+  dlg.addEventListener('click',e=>{if(e.target===dlg)dlg.hidden=true});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')dlg.hidden=true});
+})();
 // Installable app: offline cache on the hosted site only (not inside claude.ai).
 if('serviceWorker' in navigator&&location.protocol==='https:'&&!/claude\.ai|claudeusercontent/.test(location.hostname)){
   window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{})});
